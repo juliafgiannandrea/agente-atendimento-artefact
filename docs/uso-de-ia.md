@@ -30,3 +30,8 @@ O enunciado pede que eu explique quais assistentes de IA usei e como. Este arqui
 - Discutimos o plano de ataque. Por sugestão dele, o conjunto de perguntas de teste foi para antes da construção do agente e as decisões passaram a ser registradas desde o início.
 - Decidi provedor, banco, interface e Docker depois de pesar os trade-offs apresentados (ver `docs/decisoes.md`, D01 a D07).
 - O Claude gerou o esqueleto do repositório, o `.env.example`, a função `build_model()` e estes documentos.
+
+### Etapa 1 — Conjunto de perguntas de teste
+
+- Defini as categorias que o conjunto precisava cobrir: as 4 perguntas do enunciado, estoque e status, promoções, parcelamento, verificação de identidade, acessórios, fora do escopo e prompt injection.
+- O Claude escreveu 34 casos em `tests/eval_set/perguntas.yaml`, com as respostas esperadas calculadas a partir dos CSVs (preços, promoções ativas, parcelas e titulares dos pedidos), e apontou as suposições que alguns casos exigem (S01 a S05 em `docs/decisoes.md`).

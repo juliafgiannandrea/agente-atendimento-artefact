@@ -4,6 +4,9 @@ strands-agents[anthropic,openai]>=1.63,<2
 # Configuração
 python-dotenv>=1.0
 
+# Conjunto de perguntas de teste (tests/eval_set/*.yaml)
+pyyaml>=6.0
+
 # ETL e extração do PDF de políticas
 pandas>=2.2
 pdfplumber>=0.11
