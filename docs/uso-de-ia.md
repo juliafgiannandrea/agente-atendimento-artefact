@@ -1,0 +1,32 @@
+# Uso de assistentes de IA
+
+O enunciado pede que eu explique quais assistentes de IA usei e como. Este arquivo registra isso etapa por etapa e alimenta a seção correspondente do README.
+
+## Ferramenta
+
+- **Claude (Anthropic):** uso o app do Claude conectado à pasta do projeto no meu computador. Com ele leio os materiais, discuto decisões e gero código e documentação.
+- **Skills do Claude:** em cada etapa uso as skills que se aplicam ao tipo de tarefa (por exemplo, leitura de PDF, exploração e validação de dados, escrita de documentação).
+
+## Meu workflow
+
+1. **Entendimento próprio primeiro.** Antes de usar IA, li o enunciado e os requisitos e olhei a base de dados, para entender a estrutura e o que foi fornecido.
+2. **Minhas anotações.** Registrei num arquivo de anotações o que eu achava que devia ser implementado e como queria fazer.
+3. **Contexto para o Claude.** Conectei a pasta com todos os materiais (enunciado, dados, políticas e anotações) e pedi que ele entendesse o contexto antes de começarmos.
+4. **Crítica do plano.** Com o retorno dele, identifiquei os pontos frágeis do meu plano e pedi um passo a passo de implementação, partindo da ordem que eu tinha pensado.
+5. **Validação.** O Claude gerou o plano lógico; eu validei, ajustei e aprovei.
+6. **Implementação em partes pequenas.** Seguimos o plano etapa por etapa. Cada parte é implementada, revisada por mim e commitada.
+
+## Divisão de responsabilidades
+
+- **Decisões são minhas.** O Claude levanta opções e trade-offs; a escolha é minha e fica registrada em `docs/decisoes.md`.
+- **Documentação escrita pelo Claude, revisada por mim.** Toda a documentação (decisões, este arquivo, README) é redigida pelo Claude a partir das nossas discussões, e eu reviso antes de commitar.
+- **Commits são meus.** O Claude cria e edita arquivos locais, mas não faz commit nem push. Cada commit marca uma etapa que revisei.
+
+## Registro por etapa
+
+### Etapa 0 — Entendimento e setup
+
+- O Claude leu o enunciado, os CSVs, o manual de políticas e minhas anotações, e fez uma análise de qualidade dos dados: estoques zerados, status inconsistentes, totais de pedido divergentes, promoções duplicadas e contradições no manual.
+- Discutimos o plano de ataque. Por sugestão dele, o conjunto de perguntas de teste foi para antes da construção do agente e as decisões passaram a ser registradas desde o início.
+- Decidi provedor, banco, interface e Docker depois de pesar os trade-offs apresentados (ver `docs/decisoes.md`, D01 a D07).
+- O Claude gerou o esqueleto do repositório, o `.env.example`, a função `build_model()` e estes documentos.

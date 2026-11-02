@@ -158,6 +158,7 @@ venv/
 ENV/
 env.bak/
 venv.bak/
+.env.example
 
 # Spyder project settings
 .spyderproject
@@ -218,3 +219,8 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# Projeto: banco gerado pelo ETL (não versionar)
+data/*.db
+data/*.db-journal
+
