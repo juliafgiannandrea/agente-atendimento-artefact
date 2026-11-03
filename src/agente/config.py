@@ -20,6 +20,7 @@ PROVIDERS = ("anthropic", "openrouter")
 OPENROUTER_BASE_URL = "https://openrouter.ai/api/v1"
 STORE_TIMEZONE = "America/Campo_Grande"  # fuso da loja (UTC-4)
 DEFAULT_REFERENCE_DATE = "2026-03-25"  # ver docs/decisoes.md, S01
+DEFAULT_DB_PATH = "data/emporio.db"
 
 
 class ConfigError(RuntimeError):
@@ -47,26 +48,31 @@ class Settings:
         if not model_id:
             raise ConfigError("MODEL_ID não definido no .env.")
 
-        db_path = Path(os.getenv("DB_PATH", "data/emporio.db"))
-        if not db_path.is_absolute():
-            db_path = ROOT_DIR / db_path
-
-        raw_date = os.getenv("REFERENCE_DATE", "").strip() or DEFAULT_REFERENCE_DATE
-        try:
-            reference_date = date.fromisoformat(raw_date)
-        except ValueError as exc:
-            raise ConfigError(
-                f"REFERENCE_DATE inválida: '{raw_date}'. Use o formato AAAA-MM-DD."
-            ) from exc
-
         return cls(
             provider=provider,
             model_id=model_id,
             temperature=float(os.getenv("TEMPERATURE", "0.2")),
             max_tokens=int(os.getenv("MAX_TOKENS", "1024")),
-            db_path=db_path,
-            reference_date=reference_date,
+            db_path=get_db_path(),
+            reference_date=get_reference_date(),
         )
+
+
+def get_db_path() -> Path:
+    """Caminho do banco SQLite (DB_PATH), relativo à raiz do projeto."""
+    db_path = Path(os.getenv("DB_PATH", "").strip() or DEFAULT_DB_PATH)
+    return db_path if db_path.is_absolute() else ROOT_DIR / db_path
+
+
+def get_reference_date() -> date:
+    """Data de referência simulada (REFERENCE_DATE; ver docs/decisoes.md, S01)."""
+    raw_date = os.getenv("REFERENCE_DATE", "").strip() or DEFAULT_REFERENCE_DATE
+    try:
+        return date.fromisoformat(raw_date)
+    except ValueError as exc:
+        raise ConfigError(
+            f"REFERENCE_DATE inválida: '{raw_date}'. Use o formato AAAA-MM-DD."
+        ) from exc
 
 
 def _require_env(name: str) -> str:
