@@ -1,0 +1,20 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "agente-atendimento-emporio"
+version = "0.1.0"
+description = "Agente de atendimento da Empório da Música (desafio técnico AI Engineer — Artefact)"
+requires-python = ">=3.11"
+
+# As dependências ficam em requirements.txt, que também instala este pacote
+# em modo editável (-e .) para que `agente` e `etl` sejam importáveis.
+
+[tool.setuptools.packages.find]
+where = ["src", "."]
+include = ["agente*", "etl*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"
