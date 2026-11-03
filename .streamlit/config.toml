@@ -1,0 +1,15 @@
+# Tema da UI (cores inspiradas na identidade visual da Artefact).
+# Detalhes de estilo que o tema não cobre ficam em src/agente/ui/estilo.py.
+[theme]
+base = "light"
+primaryColor = "#E0005A"
+backgroundColor = "#F5F6FA"
+secondaryBackgroundColor = "#FFFFFF"
+textColor = "#0D1634"
+font = "sans serif"
+
+[client]
+toolbarMode = "minimal"
+
+[browser]
+gatherUsageStats = false
