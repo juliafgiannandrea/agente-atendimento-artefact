@@ -165,3 +165,83 @@ STATUS_PEDIDO = {
     "delivered": "Entregue",
     "cancelled": "Cancelado",
 }
+
+
+# --- Formatação ----------------------------------------------------------------
+
+def formata_brl(valor: float | Decimal | None) -> str | None:
+    """1299.0 -> 'R$ 1.299,00' (formato brasileiro, para o agente não reformatar)."""
+    if valor is None:
+        return None
+    inteiro, centavos = f"{arredonda(valor):.2f}".split(".")
+    inteiro = f"{int(inteiro):,}".replace(",", ".")
+    return f"R$ {inteiro},{centavos}"
+
+
+# --- Horário de funcionamento (manual, seção 2) --------------------------------
+
+# weekday(): 0 = segunda ... 6 = domingo. None = fechado.
+HORARIO_FUNCIONAMENTO: dict[int, tuple[str, str] | None] = {
+    0: ("09:00", "18:00"),
+    1: ("09:00", "18:00"),
+    2: ("09:00", "18:00"),
+    3: ("09:00", "18:00"),
+    4: ("09:00", "18:00"),
+    5: ("09:00", "13:00"),
+    6: None,
+}
+
+DIAS_SEMANA = ("segunda-feira", "terça-feira", "quarta-feira", "quinta-feira",
+               "sexta-feira", "sábado", "domingo")
+
+
+# --- Prazos de pós-venda (manual, seções 4 e 8) -------------------------------
+
+PRAZO_ARREPENDIMENTO_DIAS = 7       # 4.1: corridos, após o recebimento
+PRAZO_TROCA_DEFEITO_DIAS = 30       # 4.2: corridos, após a compra
+PRAZO_GARANTIA_LEGAL_DIAS = 90      # 8.1: a partir do recebimento
+
+
+def _prazo(inicio, dias: int, referencia) -> dict:
+    from datetime import timedelta
+    limite = inicio + timedelta(days=dias)
+    return {
+        "conta_a_partir_de": inicio.isoformat(),
+        "valido_ate": limite.isoformat(),
+        "dentro_do_prazo": referencia <= limite,
+        "dias_restantes": max((limite - referencia).days, 0),
+    }
+
+
+def prazos_pedido(status: str, data_pedido, previsao_entrega, referencia) -> dict:
+    """Prazos de pós-venda de um pedido na data de referência.
+
+    O sistema só registra a previsão de entrega; para pedidos entregues ela é
+    usada como data de recebimento estimada (o agente avisa o cliente).
+    Datas como `datetime.date`.
+    """
+    resultado: dict = {"data_referencia": referencia.isoformat()}
+
+    if status == "shipped" and previsao_entrega is not None:
+        atraso = (referencia - previsao_entrega).days
+        resultado["entrega"] = {
+            "previsao": previsao_entrega.isoformat(),
+            "atrasado": atraso > 0,
+            "dias_de_atraso": max(atraso, 0),
+        }
+
+    if status != "delivered":
+        resultado["observacao"] = (
+            "Prazos de devolução, troca e garantia só começam a contar após a entrega."
+            if status != "cancelled" else "Pedido cancelado: não há prazos de pós-venda."
+        )
+        return resultado
+
+    recebimento = previsao_entrega or data_pedido
+    resultado["recebimento_estimado"] = recebimento.isoformat()
+    resultado["aviso"] = ("A data de recebimento é estimada pela previsão de entrega; "
+                          "o sistema não registra a data real.")
+    resultado["arrependimento_compra_online"] = _prazo(recebimento, PRAZO_ARREPENDIMENTO_DIAS, referencia)
+    resultado["troca_por_defeito"] = _prazo(data_pedido, PRAZO_TROCA_DEFEITO_DIAS, referencia)
+    resultado["garantia_legal"] = _prazo(recebimento, PRAZO_GARANTIA_LEGAL_DIAS, referencia)
+    return resultado
