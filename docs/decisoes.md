@@ -109,6 +109,56 @@ Cada decisão traz o contexto, a escolha e o motivo. Este arquivo alimenta a se�
 - **Governança:** cada seção tem no cabeçalho a versão do manual, as páginas de origem, o público (`cliente` ou `interno`) e o status de revisão humana. A seção 7 do manual vira duas peças: as diretrizes de tom (7.1) vão para a persona; o fluxo e as situações especiais (7.2 e 7.3) ficam numa seção interna, que orienta o agente mas não é citada ao cliente.
 - **Testes de fidelidade:** `tests/test_kb.py` extrai todo valor verificável das seções curadas (preços, percentuais, prazos, telefones, e-mails, leis) e confere que ele existe no texto do PDF. Se a curadoria introduzir um valor que não está no manual, o teste falha.
 
+## D16 — Arquitetura do agente: tools de contrato fechado + SQL livre como último recurso
+
+- **Contexto:** o agente precisa saber quando consultar dados e quando consultar políticas, sem inventar.
+- **Decisão:** loop ReAct do Strands com oito tools:
+
+  | Tool | Fonte | Para quê |
+  |---|---|---|
+  | `buscar_produtos` | `vw_catalogo` | Listar opções com filtros (categoria, preço, texto, promoção) |
+  | `consultar_produto` | `vw_catalogo` | Um produto: preço, PIX, parcelas, disponibilidade; alternativas se indisponível |
+  | `consultar_pedido` | `vw_pedidos` + `customers` | Pedido com verificação de identidade e prazos calculados |
+  | `ler_politica` | `kb/politicas/` | Uma seção da base de políticas |
+  | `registrar_reclamacao` | `data/atendimento.db` | Registrar e encaminhar, com protocolo |
+  | `hora_atual_loja` | relógio | Se a loja está aberta e quando a equipe volta |
+  | `entender_esquema` | `kb/esquema/` | Documentação do banco antes de montar SQL |
+  | `consultar_banco` | `vw_catalogo`, `categories` | SQL livre, somente leitura |
+
+- **Motivo:**
+  - **Tools fechadas primeiro:** cobrem as perguntas recorrentes do enunciado com parâmetros tipados. O modelo não escreve SQL para o que é frequente, então erra menos e não há como contornar regras.
+  - **Cálculos no código, não no modelo:** preços com promoção, PIX, parcelamento máximo, atraso de entrega e prazos de devolução, troca e garantia chegam prontos nas respostas das tools, calculados por `src/agente/regras.py`. O modelo só repete. Valores monetários já vêm formatados ("R$ 1.299,00").
+  - **SQL livre como último recurso:** para perguntas que as tools não preveem (filtrar por especificação técnica, contar, comparar). O agente lê a documentação do esquema (`entender_esquema`, com divulgação progressiva: visão geral, depois a tabela), monta a query, executa (`consultar_banco`) e pode refazer se o resultado não bastar.
+  - **Alternativas automáticas:** quando o produto está sem estoque, descontinuado ou em breve, `consultar_produto` já devolve até 3 alternativas da mesma categoria, priorizando o mesmo tipo (dreadnought, 7 cordas, nylon, barítono...) e depois o preço mais próximo (manual 7.3).
+
+## D17 — Guardrails em camadas
+
+- **Princípio:** o que é crítico (privacidade, integridade dos dados) é garantido **em código**, não só no prompt. O prompt orienta; o código impede.
+- **Verificação de identidade (`consultar_pedido`):** exige nome com pelo menos nome e sobrenome, todos presentes no cadastro, **e** telefone (só dígitos, com ou sem DDD) ou e-mail idênticos ao do titular. Se não conferir, a tool não devolve nada do pedido, nem se ele existe ou de quem é. Depois de 3 falhas na mesma conversa, a tool para de consultar e orienta o cliente a falar com a equipe (contra tentativa e erro).
+- **SQL livre (`consultar_banco`):**
+  - conexão `mode=ro` (somente leitura) e autorizador do SQLite que nega tudo que não seja leitura;
+  - só lê `vw_catalogo` e `categories`. Clientes, pedidos, tabelas brutas e de qualidade ficam fora, para que o SQL livre não contorne a verificação de identidade. Um CTE com o nome da view não engana o autorizador: as tabelas lidas por trás dela precisam ser as do catálogo;
+  - um comando por chamada, até 2.000 caracteres, até 50 linhas, interrupção de consultas longas e no máximo 4 consultas por mensagem do cliente.
+- **Entrada:** mensagens acima de 2.000 caracteres não chegam ao modelo.
+- **Falhas do provedor:** são classificadas pelo código HTTP (chave inválida, sem créditos, modelo recusado, modelo inexistente, limite de requisições, falha de conexão). O cliente recebe uma mensagem amigável, com uma versão própria para limite de requisições ("muitas conversas ao mesmo tempo, tente em um minuto"); quem opera o CLI vê um aviso com o motivo e o que fazer.
+- **Novas tentativas:** no máximo 3 chamadas ao modelo por rodada, com esperas de 2 segundos, em vez do padrão do Strands (6 tentativas, mais de 1 minuto de espera), que deixava o terminal parado sem explicação.
+- **Verificação ao iniciar:** o CLI faz uma chamada mínima ao modelo antes da conversa e encerra com uma mensagem clara se a chave, o modelo ou a conexão estiverem com problema (`--sem-verificacao` pula o teste e economiza uma requisição). Os avisos internos do Strands só aparecem com `--debug`.
+- **Prompt:** persona com princípios inegociáveis (não inventar, transparência de preço, escopo, privacidade, não decidir pela loja, instruções só da loja) e regras de qual fonte usar. Notas de curadoria e referências internas nunca entram no prompt.
+- **Avaliador de saída:** não implementado nesta versão (ver limitações).
+
+## D18 — Prompt de sistema e memória
+
+- **Formato:** texto simples, sem Markdown (sem negrito com asteriscos, títulos ou tabelas), como numa conversa de WhatsApp. Num teste, o modelo respondia com `**negrito**`, que aparece como asteriscos no terminal.
+- **Prompt:** persona (`kb/soul.md`) + tabela de qual ferramenta usar para cada tipo de pergunta + índice das políticas (gerado dos cabeçalhos) + data de referência. A hora atual não entra no prompt, para não ficar desatualizada: vem da tool `hora_atual_loja`.
+- **Memória na sessão:** o histórico de mensagens do Strands, com janela deslizante de 40 mensagens (`SlidingWindowConversationManager`), que preserva os pares de chamada e resultado de tools.
+- **Memória entre execuções (opcional):** `python -m agente --sessao <id>` usa o `FileSessionManager` do Strands e grava a conversa em `data/sessoes/`, fora do Git. Os contadores dos guardrails (tentativas de identificação) recomeçam a cada execução.
+- **Reclamações** ficam em `data/atendimento.db`, separado do banco do ETL, que é reconstruído a cada execução e perderia os registros.
+
+## D19 — Testes do agente sem chamar API
+
+- **Decisão:** as tools são testadas diretamente contra um banco gerado pelo ETL num diretório temporário; o loop do agente é testado com um modelo roteirizado (`tests/modelo_roteirizado.py`), que simula o modelo chamando tools em sequência.
+- **Motivo:** os testes rodam sem chave de API, de graça e de forma determinística, e cobrem o que é código: guardrails, cálculos, montagem do prompt, registro das tools, memória e o fluxo de SQL em duas etapas. A qualidade das respostas do modelo é avaliada à parte, com o conjunto de perguntas de teste (`tests/eval_set/`).
+
 ---
 
 ## Suposições (o enunciado não define)
@@ -127,7 +177,7 @@ As suposições S01 a S03, S06 e S07 são decisões minhas diante de informaçõ
     - usar a data real e aceitar todos os prazos vencidos, pelo motivo acima;
     - deslocar no ETL todas as datas da base para perto de hoje. Mantém o calendário real, mas altera os dados originais e exige justificar a transformação; a data simulada é mais simples e transparente.
   - **Promoções não dependem da data:** a tabela de promoções só tem o campo `is_active`, sem período de vigência. O caso da Black Friday (`promo-02`) se comporta igual com qualquer data, porque as promoções de Black Friday estão inativas. Simular uma Black Friday ativa exigiria inventar dados que a loja não cadastrou.
-  - **Escopo da data simulada:** vale para prazos e pedidos. A decisão sobre o horário de funcionamento ("estão abertos agora?"), que pode usar data e hora reais no fuso de Campo Grande (America/Campo_Grande, UTC−4), fica para a etapa das tools.
+  - **Escopo da data simulada:** vale para prazos e pedidos. O horário de funcionamento ("estão abertos agora?") usa a data e a hora reais no fuso de Campo Grande (America/Campo_Grande, UTC−4), pela tool `hora_atual_loja`. Feriados não estão cadastrados, porque o manual não os lista.
   - **Efeitos:** o pedido 8 (enviado, previsão 28/02/2026) aparece com 25 dias de atraso; o pedido 4 (entregue, previsão 22/12/2025) está fora do arrependimento e da troca por defeito e acabou de sair da garantia legal; a Black Friday (novembro) não é a campanha do momento.
   - **Casos afetados:** `enun-04b`, `promo-02`, `ident-03`.
 
