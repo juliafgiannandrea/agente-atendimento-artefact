@@ -8,11 +8,12 @@ Protótipo de um agente de atendimento por mensagens de texto para a Empório da
 
 ```
 data/raw/        CSVs e PDF de políticas originais, intocados
-etl/             tratamento dos dados → gera data/emporio.db (SQLite)
+etl/             ETL: schema, pipeline, verificações de qualidade e relatório → data/emporio.db
 kb/              políticas em Markdown, índice e persona
 src/agente/      agente (Strands), tools, configuração do modelo e CLI
-tests/eval_set/  perguntas de teste com resposta esperada
-docs/            decisões técnicas e registro de uso de IA
+tests/           testes automatizados (pytest)
+tests/eval_set/  perguntas de teste do agente com resposta esperada
+docs/            decisões técnicas, relatório de qualidade de dados e registro de uso de IA
 ```
 
 ## Como rodar
@@ -27,4 +28,20 @@ pip install -r requirements.txt
 cp .env.example .env             # escolha PROVIDER e MODEL_ID e preencha a chave
 ```
 
-Os comandos do ETL e do chat serão adicionados nas próximas etapas.
+### 1. Gerar o banco (ETL)
+
+```bash
+python -m etl.pipeline
+```
+
+Lê `data/raw/`, gera `data/emporio.db` (SQLite, com camadas bronze, silver e gold) e o relatório [`docs/data_quality.md`](docs/data_quality.md). Pode ser executado quantas vezes quiser: o banco é reconstruído do zero e o resultado é sempre o mesmo.
+
+### 2. Rodar os testes
+
+```bash
+pytest
+```
+
+Os testes usam um banco temporário e não alteram `data/` nem `docs/`.
+
+O comando do chat será adicionado nas próximas etapas.

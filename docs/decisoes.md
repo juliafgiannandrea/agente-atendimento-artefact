@@ -54,11 +54,53 @@ Cada decisão traz o contexto, a escolha e o motivo. Este arquivo alimenta a se�
 - **Decisão:** escrever o conjunto de perguntas de teste (`tests/eval_set/perguntas.yaml`) antes de construir o agente, com fonte esperada, fatos obrigatórios e o que invalida cada resposta.
 - **Motivo:** os casos guiam o desenho das tools e da KB e viram a base da avaliação. Também expõem cedo as suposições que precisam ser decididas (abaixo).
 
+## D09 — Arquitetura do ETL em camadas (bronze, silver, gold) dentro do SQLite
+
+- **Contexto:** os CSVs têm inconsistências que o agente não pode esconder nem repassar sem critério.
+- **Decisão:** três camadas no mesmo banco, reconstruído do zero a cada execução (*full refresh*):
+  - **bronze (`raw_*`):** cópia fiel dos CSVs, todas as colunas como texto, sem tratamento;
+  - **silver:** tabelas tipadas e padronizadas, com chave primária, chave estrangeira e `CHECK` declarados no schema, mais colunas de flag de qualidade;
+  - **gold (`vw_*`):** views de negócio consumidas pelas tools do agente (catálogo com preço final e disponibilidade; pedidos com itens).
+- **Motivo:**
+  - a bronze dentro do banco permite comparar origem e dado tratado em SQL, e os arquivos de `data/raw/` nunca são alterados;
+  - o *full refresh* torna o ETL idempotente: rodar duas vezes gera o mesmo banco, o que é simples e suficiente para o volume (65 produtos, 20 pedidos);
+  - inconsistências são **sinalizadas, não corrigidas em silêncio**: o valor original é mantido, e o valor calculado e a flag entram ao lado.
+
+## D10 — Ferramentas do ETL: pandas + SQL + verificações em Python puro
+
+- **Decisão:** pandas para ler e tipar os CSVs; SQL (`schema.sql`) para tabelas, restrições e views; verificações de qualidade como funções Python com severidade (**erro** bloqueia o ETL; **alerta** é registrado e o ETL continua). Os resultados vão para a tabela `dq_results`, e o `docs/data_quality.md` é gerado a partir dela.
+- **Motivo:** para 6 tabelas pequenas, bibliotecas de validação (Pandera, Great Expectations) acrescentariam dependência e configuração sem ganho proporcional; verificações próprias deixam a regra de cada checagem visível no código. A adoção dessas bibliotecas fica em "com mais tempo, eu faria".
+
+## D11 — Dados de clientes no mesmo banco
+
+- **Decisão:** a tabela de clientes fica no mesmo SQLite das demais.
+- **Motivo:** suficiente para o protótipo. A proteção dos dados pessoais está na camada de acesso: as tools nunca listam clientes, e dados de pedido só saem após a verificação de identidade (S05). Separar os dados pessoais em outro banco ou serviço, com controle de acesso próprio, fica como melhoria.
+
+## D12 — Testes automatizados com pytest
+
+- **Decisão:** testes com `pytest` para o ETL (idempotência, contagens, flags esperadas nos casos conhecidos) e, depois, para as regras de negócio e as tools.
+- **Motivo:** garantem que uma mudança no código não quebre silenciosamente o que já funcionava, e documentam o comportamento esperado de forma executável.
+
+## D13 — Regras de negócio num único módulo (`src/agente/regras.py`)
+
+- **Contexto:** regras como parcelamento (S02), PIX, conflito de promoções (S06) e disponibilidade (S04) são usadas tanto pelo ETL (flags e preços calculados) quanto pelas tools do agente.
+- **Decisão:** cada regra é escrita uma vez em `src/agente/regras.py` e importada pelos dois lados. Os preços vigentes são calculados em Python com essas regras e gravados na tabela `product_prices`, em vez de reescritos em SQL nas views. A normalização de texto (busca de produto e verificação de identidade) segue o mesmo princípio, em `src/agente/normalizacao.py`.
+- **Motivo:** evita que o relatório de qualidade e o agente divirjam sobre a mesma regra. Valores monetários usam `Decimal` com arredondamento comercial, para evitar erros de ponto flutuante (ex.: 2.199 × 0,95 = 2.089,05, e não 2.089,0499…).
+
+## D14 — Detalhes do ETL
+
+- **Carga atômica:** o banco é construído num arquivo temporário e só substitui o definitivo no fim. Se uma verificação de erro falhar, o ETL para e o banco anterior continua intacto.
+- **Relatório determinístico:** `docs/data_quality.md` não tem horário de execução (que fica em `etl_metadata`). A mesma entrada gera o mesmo arquivo, então o diff no Git só muda quando os dados ou as regras mudam.
+- **Toda verificação é registrada**, inclusive as que passaram, para mostrar o que foi conferido e não só o que deu errado.
+- **Produto fora de comercialização em pedido (A03)** considera só o status (`coming_soon` ou `discontinued`), não o estoque: um item vendido que esgotou depois é normal e não indica inconsistência.
+- **Rótulos de status de pedido:** a base não define o significado de `pending` e `confirmed`. Os rótulos usados ("Pedido recebido, aguardando processamento" e "Pedido confirmado, em preparação para envio") são uma interpretação neutra, que não promete prazos.
+- **Pacote instalável:** `pyproject.toml` + `-e .` no `requirements.txt` tornam `agente` e `etl` importáveis de qualquer diretório, sem manipular `sys.path`.
+
 ---
 
 ## Suposições (o enunciado não define)
 
-As suposições S01 a S03 são decisões minhas diante de informações ausentes ou divergentes nos materiais. Os IDs entre crases referem-se aos casos de `tests/eval_set/perguntas.yaml`.
+As suposições S01 a S03 e S06 são decisões minhas diante de informações ausentes ou divergentes nos materiais. Os IDs entre crases referem-se aos casos de `tests/eval_set/perguntas.yaml`.
 
 - **S01 — Data de referência simulada: 25/03/2026 (quarta-feira).**
   - **Problema:** os pedidos vão de out/2025 a 22/03/2026. Com a data real (nov/2026):
@@ -94,3 +136,9 @@ As suposições S01 a S03 são decisões minhas diante de informações ausentes
 - **S04 — Status prevalece sobre estoque:** produto `coming_soon` ou `discontinued` não é oferecido para compra, mesmo com `stock_quantity` > 0. Caso afetado: `estq-03` (Kala KA-ABP-CTG, `coming_soon` com 2 unidades).
 
 - **S05 — Verificação de identidade:** dados de pedido só são informados depois que o cliente confirma nome completo e telefone ou e-mail do titular. A checagem fica na tool, não só no prompt. Casos afetados: `ident-01` a `ident-04` (pedidos e identidade) e `inj-04`/`inj-05` (tentativas de burlar a verificação por SQL injection e por instrução falsa de "sistema").
+
+- **S06 — Conflito de promoções: com duas ou mais promoções ativas para o mesmo produto, nenhuma vale.**
+  - **Problema:** a base tem produtos com mais de uma promoção (93, 96 e 99) e não define qual prevalece. Hoje as duplicatas são todas de promoções inativas, mas a regra precisa existir para quando a base for atualizada.
+  - **Decisão (minha):** se um produto tiver mais de uma promoção ativa, nenhuma é aplicada, o produto é vendido pelo preço de tabela e o ETL registra um alerta para a equipe resolver.
+  - **Motivo:** escolher automaticamente (por exemplo, o maior desconto) seria uma decisão comercial tomada pelo sistema sem autorização. Aplicar o preço de tabela evita prometer um desconto que pode não valer, como pede o manual (seção 7.3), e o alerta torna o conflito visível em vez de escondê-lo.
+  - **Duplicatas inativas:** são registradas como alerta informativo, sem efeito no preço.
