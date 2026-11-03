@@ -5,7 +5,7 @@ from agente.prompt import montar_prompt
 
 from .modelo_roteirizado import ModeloRoteirizado, resultados_de_tools
 
-TOOLS_ESPERADAS = {"buscar_produtos", "consultar_produto", "consultar_pedido", "ler_politica",
+TOOLS_ESPERADAS = {"planejar", "buscar_produtos", "consultar_produto", "consultar_pedido", "ler_politica",
                    "registrar_reclamacao", "hora_atual_loja", "entender_esquema", "consultar_banco"}
 
 

@@ -159,6 +159,16 @@ Cada decisão traz o contexto, a escolha e o motivo. Este arquivo alimenta a se�
 - **Decisão:** as tools são testadas diretamente contra um banco gerado pelo ETL num diretório temporário; o loop do agente é testado com um modelo roteirizado (`tests/modelo_roteirizado.py`), que simula o modelo chamando tools em sequência.
 - **Motivo:** os testes rodam sem chave de API, de graça e de forma determinística, e cobrem o que é código: guardrails, cálculos, montagem do prompt, registro das tools, memória e o fluxo de SQL em duas etapas. A qualidade das respostas do modelo é avaliada à parte, com o conjunto de perguntas de teste (`tests/eval_set/`).
 
+## D20 — Planejamento explícito com a tool `planejar`
+
+- **Contexto:** no loop ReAct puro, o modelo decide um passo de cada vez, sem plano visível. Num teste de reclamação, o agente encadeou bem três tools, mas afirmou um fato que o cliente não tinha dito ("você já aceitou a entrega").
+- **Decisão:** uma tool `planejar(objetivo, passos, informacoes_faltantes)`, chamada antes das outras **só** quando a pergunta exige mais de uma fonte ou várias etapas (devolução, troca, reclamação sobre um pedido). A tool não consulta nada: registra e devolve o plano, e orienta a perguntar ao cliente o que estiver em `informacoes_faltantes`. O prompt também proíbe afirmar fatos sobre o cliente que ele não disse e que nenhuma ferramenta retornou.
+- **Motivo:**
+  - o campo de informações faltantes leva o modelo a **perguntar em vez de supor**;
+  - o plano fica **visível** no `--debug`, na conversa exportada e, na UI, como o primeiro cartão da resposta, o que mostra como o agente decide entre dados e políticas;
+  - restringir a perguntas com várias fontes evita gastar uma requisição a mais nas perguntas simples, que são a maioria.
+- **Alternativas descartadas:** instrução de planejamento só no prompt (invisível); planejador separado no estilo *plan-and-execute* (dobra as chamadas ao modelo em toda mensagem e falha mais com modelos gratuitos); raciocínio nativo do modelo (depende do provedor e não tem estrutura).
+
 ---
 
 ## Suposições (o enunciado não define)

@@ -4,9 +4,9 @@ ligadas ao contexto da conversa (bancos, data de referência e estado)."""
 from __future__ import annotations
 
 from agente.contexto import Contexto
-from agente.tools import catalogo, horario, pedidos, politicas, reclamacoes, sql
+from agente.tools import catalogo, horario, pedidos, planejamento, politicas, reclamacoes, sql
 
-MODULOS = [catalogo, pedidos, politicas, reclamacoes, horario, sql]
+MODULOS = [planejamento, catalogo, pedidos, politicas, reclamacoes, horario, sql]
 
 
 def criar_ferramentas(ctx: Contexto) -> list:
