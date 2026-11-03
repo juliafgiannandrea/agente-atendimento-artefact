@@ -13,11 +13,15 @@ a quem opera o CLI, com o motivo e o que fazer.
 
 from __future__ import annotations
 
+import json
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from pathlib import Path
+from typing import Any
 
 from strands import Agent, ModelRetryStrategy
 from strands.agent.conversation_manager import SlidingWindowConversationManager
+from strands.hooks import AfterToolCallEvent, BeforeToolCallEvent
 from strands.session.file_session_manager import FileSessionManager
 from strands.types.exceptions import ModelThrottledException
 
@@ -82,17 +86,17 @@ def estrategia_de_tentativas() -> ModelRetryStrategy:
 
 def criar_agente(ctx: Contexto, model=None, session_id: str | None = None,
                  sessoes_dir: Path = SESSOES_DIR,
-                 retry_strategy: ModelRetryStrategy | None = None) -> Agent:
+                 retry_strategy: ModelRetryStrategy | None = None, canal: str = "texto") -> Agent:
     kwargs = {}
     if session_id:
         sessoes_dir.mkdir(parents=True, exist_ok=True)
         kwargs["session_manager"] = FileSessionManager(session_id=session_id, storage_dir=str(sessoes_dir))
     return Agent(
         model=model or build_model(),
-        system_prompt=montar_prompt(ctx),
+        system_prompt=montar_prompt(ctx, canal=canal),
         tools=criar_ferramentas(ctx),
         conversation_manager=SlidingWindowConversationManager(window_size=JANELA_MENSAGENS),
-        callback_handler=None,          # o CLI imprime só a resposta final
+        callback_handler=None,          # CLI e UI mostram só a resposta final
         agent_id="atendente",
         retry_strategy=retry_strategy or estrategia_de_tentativas(),
         **kwargs,
@@ -112,38 +116,101 @@ def verificar_conexao(model, retry_strategy: ModelRetryStrategy | None = None) -
 
 
 @dataclass
+class ChamadaTool:
+    """Uma chamada de ferramenta feita pelo agente, com o resultado devolvido."""
+    nome: str
+    entrada: dict
+    resultado: Any = None      # dict (tools que devolvem JSON) ou str (ex.: ler_politica)
+
+
+@dataclass
 class Resposta:
     texto: str
-    ferramentas: list[str] = field(default_factory=list)
+    chamadas: list[ChamadaTool] = field(default_factory=list)
     erro: str | None = None
 
+    @property
+    def ferramentas(self) -> list[str]:
+        return [c.nome for c in self.chamadas]
 
-def _ferramentas_usadas(mensagens: list[dict]) -> list[str]:
-    return [bloco["toolUse"]["name"]
-            for m in mensagens if m.get("role") == "assistant"
-            for bloco in m.get("content", []) if "toolUse" in bloco]
+
+def interpreta_resultado(tool_result: dict | None) -> Any:
+    """Conteúdo de um toolResult do Strands: o dict original quando a tool devolveu
+    JSON, ou o texto puro."""
+    if not tool_result:
+        return None
+    partes = []
+    for bloco in tool_result.get("content", []):
+        if "json" in bloco:
+            return bloco["json"]
+        if "text" in bloco:
+            partes.append(bloco["text"])
+    texto = "".join(partes)
+    try:
+        return json.loads(texto)
+    except (json.JSONDecodeError, TypeError):
+        return texto
+
+
+def extrair_chamadas(mensagens: list[dict]) -> list[ChamadaTool]:
+    """Pareia cada toolUse com o seu toolResult, na ordem em que foram chamados."""
+    chamadas: dict[str, ChamadaTool] = {}
+    for m in mensagens:
+        for bloco in m.get("content", []):
+            if "toolUse" in bloco:
+                uso = bloco["toolUse"]
+                chamadas[uso["toolUseId"]] = ChamadaTool(uso["name"], uso.get("input") or {})
+            elif "toolResult" in bloco:
+                resultado = bloco["toolResult"]
+                if resultado["toolUseId"] in chamadas:
+                    chamadas[resultado["toolUseId"]].resultado = interpreta_resultado(resultado)
+    return list(chamadas.values())
+
+
+# Ouvinte de progresso: recebe ("inicio" | "fim", ChamadaTool) enquanto o agente trabalha
+Ouvinte = Callable[[str, ChamadaTool], None]
 
 
 class Atendente:
     """Uma conversa com um cliente: agente + contexto + guardrails de entrada."""
 
     def __init__(self, ctx: Contexto | None = None, model=None, session_id: str | None = None,
-                 sessoes_dir: Path = SESSOES_DIR, retry_strategy: ModelRetryStrategy | None = None):
+                 sessoes_dir: Path = SESSOES_DIR, retry_strategy: ModelRetryStrategy | None = None,
+                 canal: str = "texto"):
         self.ctx = ctx or Contexto.padrao()
         self.agente = criar_agente(self.ctx, model=model, session_id=session_id,
-                                   sessoes_dir=sessoes_dir, retry_strategy=retry_strategy)
+                                   sessoes_dir=sessoes_dir, retry_strategy=retry_strategy, canal=canal)
+        self._ouvinte: Ouvinte | None = None
+        self.agente.add_hook(self._antes_da_tool, BeforeToolCallEvent)
+        self.agente.add_hook(self._depois_da_tool, AfterToolCallEvent)
 
-    def responder(self, mensagem: str) -> Resposta:
+    def _antes_da_tool(self, evento: BeforeToolCallEvent) -> None:
+        if self._ouvinte:
+            uso = evento.tool_use
+            self._ouvinte("inicio", ChamadaTool(uso["name"], uso.get("input") or {}))
+
+    def _depois_da_tool(self, evento: AfterToolCallEvent) -> None:
+        if self._ouvinte:
+            uso = evento.tool_use
+            self._ouvinte("fim", ChamadaTool(uso["name"], uso.get("input") or {},
+                                             interpreta_resultado(evento.result)))
+
+    def responder(self, mensagem: str, ouvinte: Ouvinte | None = None) -> Resposta:
+        """Responde a uma mensagem. `ouvinte`, se informado, é avisado quando cada
+        ferramenta começa e termina (a UI usa isso para o progresso em tempo real)."""
         mensagem = mensagem.strip()
         if len(mensagem) > MAX_CARACTERES_MENSAGEM:
             return Resposta(MSG_LONGA)
 
         self.ctx.estado.novo_turno()
         inicio = len(self.agente.messages)
+        self._ouvinte = ouvinte
         try:
             resultado = self.agente(mensagem)
         except Exception as exc:  # noqa: BLE001 (o cliente nunca vê o stack trace)
             categoria, diagnostico = diagnostica(exc)
             texto = MSG_LIMITE if categoria == "limite" else MSG_ERRO
             return Resposta(texto, erro=diagnostico)
-        return Resposta(str(resultado).strip(), _ferramentas_usadas(self.agente.messages[inicio:]))
+        finally:
+            self._ouvinte = None
+        return Resposta(str(resultado).strip(), extrair_chamadas(self.agente.messages[inicio:]))
