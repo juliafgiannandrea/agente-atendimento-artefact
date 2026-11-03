@@ -29,3 +29,27 @@ def db(etl_result):
     conn.row_factory = sqlite3.Row
     yield conn
     conn.close()
+
+
+@pytest.fixture()
+def ctx(etl_result, tmp_path):
+    """Contexto de uma conversa nova, apontando para o banco de teste."""
+    from datetime import datetime
+    from zoneinfo import ZoneInfo
+
+    from agente.contexto import Contexto
+
+    return Contexto(
+        db_path=etl_result.db_path,
+        reference_date=REFERENCE_DATE,
+        atendimento_db_path=tmp_path / "atendimento.db",
+        agora=lambda: datetime(2026, 3, 25, 10, 30, tzinfo=ZoneInfo("America/Campo_Grande")),
+    )
+
+
+@pytest.fixture()
+def tools(ctx):
+    """Tools da conversa, por nome."""
+    from agente.tools import criar_ferramentas
+
+    return {f.tool_name: f for f in criar_ferramentas(ctx)}

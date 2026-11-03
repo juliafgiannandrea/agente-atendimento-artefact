@@ -49,3 +49,16 @@ O enunciado pede que eu explique quais assistentes de IA usei e como. Este arqui
 - O Claude escreveu o script de extração do PDF, curou as 9 seções, o índice, a persona e as pendências, e criou testes que conferem se cada valor citado nas seções existe no PDF. Além das três contradições que eu tinha levantado, ele apontou 10 lacunas do manual (L1 a L10) e sugeriu a decisão do e-mail (S07).
 - Perguntei se o agente leria as notas de curadoria. Decidi separá-las em dois tipos: orientações ao assistente (o agente lê) e notas de curadoria (removidas pela tool).
 - Pedi uma revisão de fidelidade das 9 seções contra o manual. A revisão comparou cada linha com o PDF e encontrou interpretações que tinham entrado no texto principal (por exemplo, "exceto compras abaixo de R$ 50,00", quando o manual diz só "exceto abaixo de R$ 50,00"). Elas voltaram ao texto original e foram para blocos de orientação ou de curadoria, identificadas como interpretação.
+
+### Etapa 4 — Agente e tools
+
+- Defini as tools de contrato fechado (catálogo, pedido, política, reclamação, horário) e a regra do SQL livre: só quando a pergunta não se encaixar nelas, primeiro lendo a documentação do esquema e depois executando a query, podendo repetir.
+- O Claude propôs e implementou os guardrails em código: verificação de identidade com limite de tentativas, SQL somente leitura restrito ao catálogo (para não contornar a verificação de identidade), limites de linhas, tempo e consultas por mensagem. Também colocou os cálculos de preço, parcelas e prazos nas tools, para o modelo não fazer contas.
+- Os testes usam um modelo roteirizado, que simula o modelo chamando ferramentas, para validar o loop do agente sem gastar API. Ao rodar os testes, um caso meu de expectativa estava errado (um violão de 7 cordas sem "nylon" no nome) e foi corrigido no teste, não no código.
+- Testei o agente com modelos gratuitos do OpenRouter. O primeiro modelo foi recusado pelo provedor (só funciona em apps cadastrados) e o segundo deu limite de requisições, com o terminal parado por mais de um minuto. Com o Claude, analisei os erros e decidi: limitar as novas tentativas, classificar as falhas do provedor com mensagens claras, testar a conexão ao iniciar, esconder os logs internos fora do `--debug` e proibir Markdown nas respostas, que vinham com negrito.
+- Perguntei se o agente fazia um planejamento antes de responder. Ele não fazia (loop ReAct puro). Avaliei as opções que o Claude levantou e escolhi uma tool `planejar`, usada só em perguntas com mais de uma fonte, com um campo de informações faltantes para o agente perguntar em vez de supor (D20).
+
+### Etapa 5 — Interface (design)
+
+- Antes de implementar a UI em Streamlit, usei a skill de system design do Claude para documentar requisitos, arquitetura, trade-offs e as opções de renderização. Escolhi renderizar cartões a partir dos resultados das tools, e não a partir do texto do modelo.
+- Gerei com o Claude um protótipo visual (tela do chat, cartões por tool e diagrama de arquitetura) para validar o desenho antes de escrever o código.

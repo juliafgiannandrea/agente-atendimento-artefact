@@ -9,8 +9,8 @@ Protótipo de um agente de atendimento por mensagens de texto para a Empório da
 ```
 data/raw/        CSVs e PDF de políticas originais, intocados
 etl/             ETL: schema, pipeline, verificações de qualidade e relatório → data/emporio.db
-kb/              base de conhecimento: políticas por seção, índice, persona e pendências
-src/agente/      agente (Strands), tools, configuração do modelo e CLI
+kb/              base de conhecimento: políticas por seção, índice, persona, pendências e esquema do banco
+src/agente/      agente (Strands), tools, regras de negócio, prompt e CLI
 tests/           testes automatizados (pytest)
 tests/eval_set/  perguntas de teste do agente com resposta esperada
 docs/            decisões técnicas, relatório de qualidade de dados e registro de uso de IA
@@ -55,12 +55,27 @@ python -m etl.extrair_politicas
 
 Gera `kb/_fonte/manual_extraido.md`. As seções em `kb/politicas/` são curadas a partir desse texto e revisadas à mão.
 
-### 3. Rodar os testes
+### 3. Conversar com o atendente
+
+Com o `.env` preenchido (provedor, modelo e chave) e o banco gerado:
+
+```bash
+python -m agente                  # conversa nova
+python -m agente --sessao maria   # cria ou retoma a conversa "maria" (memória entre execuções)
+python -m agente --debug          # mostra as ferramentas usadas em cada resposta
+```
+
+Ao iniciar, o CLI faz uma chamada mínima ao modelo para conferir a chave, o modelo e a conexão; se algo estiver errado, ele explica o problema e encerra. Use `--sem-verificacao` para pular esse teste.
+
+Se usar um modelo gratuito do OpenRouter, escolha um com suporte a *tool calling* e saiba que eles têm limite de requisições por minuto e por dia. Alguns modelos gratuitos só aceitam chamadas de aplicativos cadastrados no OpenRouter e serão recusados.
+
+Durante a conversa, `/exportar` salva o diálogo em Markdown em `exemplos/` e `/sair` encerra.
+
+### 4. Rodar os testes
 
 ```bash
 pytest
 ```
 
-Os testes usam um banco temporário e não alteram `data/` nem `docs/`.
+Os testes usam um banco temporário e não alteram `data/` nem `docs/`. O agente é testado com um modelo roteirizado, então **não é preciso chave de API** para rodar os testes.
 
-O comando do chat será adicionado nas próximas etapas.

@@ -223,3 +223,6 @@ __marimo__/
 data/*.db
 data/*.db-journal
 
+
+# Atendimento: sessões de conversa salvas pelo CLI (--sessao)
+data/sessoes/
