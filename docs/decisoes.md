@@ -193,6 +193,16 @@ Cada decisão traz o contexto, a escolha e o motivo. Este arquivo alimenta a se�
 
 ---
 
+## D23 — O agente só responde: sem ajuda extra nem perguntas de refinamento; a UI não mostra as políticas
+
+- **Contexto:** perguntando sobre saxofone (a loja não tem instrumentos de sopro no sistema), o agente respondeu "Você procura algum modelo específico (alto, tenor, soprano) ou tem alguma faixa de preço em mente? Posso te avisar se chegar algo novo...". A pergunta já tinha resposta, e "avisar" é uma ação que ele não executa. Na UI, a política consultada aparecia num expansor "Política consultada".
+- **Decisão (minha):** o agente existe para tirar das costas da equipe as perguntas recorrentes, então responde o que foi perguntado e para. Não oferece ajuda além do que foi pedido, não promete nada para depois e não pergunta preferências (orçamento, modelo) para refinar uma resposta que já pode dar. Pergunta apenas o que falta para conseguir responder (identificação do cliente, número do pedido, qual produto). Quando não tem a informação, diz isso e indica os canais da equipe, em vez de "vou verificar com a equipe".
+- **O que continua, porque o manual pede (seções 7.2 e 7.3):** sugerir alternativas semelhantes quando o produto está sem estoque ou fora de linha, e fechar perguntando, no máximo, se ficou alguma dúvida.
+- **Políticas na UI:** o manual é material interno da loja. A UI deixou de mostrar o texto das políticas consultadas; o cliente recebe só a regra que responde à pergunta, no texto do atendente. Os cartões continuam para dados do sistema (produto, pedido, prazos, horário, protocolo).
+- **Onde está:** `kb/soul.md` (princípios 1 e 6 e o fluxo de atendimento), `src/agente/prompt.py` e `src/agente/ui/componentes.py`.
+
+---
+
 ## Suposições (o enunciado não define)
 
 As suposições S01 a S03, S06 e S07 são decisões minhas diante de informações ausentes ou divergentes nos materiais. Os IDs entre crases referem-se aos casos de `tests/eval_set/perguntas.yaml`.

@@ -77,7 +77,7 @@ Durante a conversa, `/exportar` salva o diálogo em Markdown em `exemplos/` e `/
 streamlit run src/agente/ui/app.py
 ```
 
-Abre o chat no navegador (por padrão em `http://localhost:8501`). A resposta do atendente aparece como texto e, abaixo, em cartões montados a partir dos dados consultados (produtos, pedidos, prazos, trecho da política). Em perguntas com várias etapas, o plano do atendente aparece como um checklist que vai sendo marcado em tempo real. A sidebar tem perguntas de exemplo e o botão "Nova conversa".
+Abre o chat no navegador (por padrão em `http://localhost:8501`). Acima do texto do atendente aparecem cartões montados a partir dos dados consultados (produtos, pedidos, prazos). As políticas consultadas não são exibidas, porque o manual é material interno da loja. Em perguntas com várias etapas, o plano do atendente aparece como um checklist que vai sendo marcado em tempo real. A sidebar tem perguntas de exemplo e o botão "Nova conversa".
 
 Rode o comando a partir da raiz do repositório, para o Streamlit usar o tema de `.streamlit/config.toml`.
 
