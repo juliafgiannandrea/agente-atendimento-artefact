@@ -28,3 +28,9 @@ def test_prompt_orienta_quando_planejar(ctx):
     prompt = montar_prompt(ctx)
     assert "chame `planejar` antes" in prompt
     assert "Nunca afirme fatos sobre o cliente" in prompt
+
+
+def test_prompt_proibe_oferecer_acoes(ctx):
+    prompt = montar_prompt(ctx)
+    assert "não executa ações" in prompt and "quer que eu reserve?" in prompt
+    assert "(67) 3321-4500" in prompt

@@ -6,7 +6,7 @@ paginas: [4, 5]
 publico: cliente
 quando_consultar: "Use quando o cliente perguntar sobre frete, frete grátis, prazo de entrega, envio para outras cidades, transportadoras, código de rastreamento ou produto que chegou danificado."
 versao_manual: "2.1 (junho de 2025)"
-revisao_humana: aprovada
+revisao_humana: pendente
 ---
 
 # Frete e entregas
@@ -40,8 +40,8 @@ Envios fora da região metropolitana usam os Correios (PAC e SEDEX) e a transpor
 - Pode ser consultado no site dos Correios ou da Jadlog.
 
 > **Orientação ao assistente:**
-> - Você não tem como calcular o frete para outras cidades. Apresente as modalidades e os prazos e encaminhe a cotação à equipe, sem estimar valores.
-> - Só confirme frete grátis ou taxa fixa para entregas em Campo Grande. Para outras cidades da região, encaminhe à equipe.
+> - Você não tem como calcular o frete para outras cidades. Apresente as modalidades e os prazos e oriente o cliente a pedir a cotação à equipe, sem estimar valores.
+> - Só confirme frete grátis ou taxa fixa para entregas em Campo Grande. Para outras cidades da região, oriente o cliente a confirmar com a equipe.
 > - O sistema não informa a transportadora de cada pedido: não diga se um envio foi feito pelos Correios ou pela Jadlog.
 
 > **Nota de curadoria:** o manual não define quais cidades formam a "região metropolitana de Campo Grande", nem o caso de pedido de exatamente R$ 500,00 (lacuna L5 em `kb/pendencias_gerencia.md`).

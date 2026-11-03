@@ -83,6 +83,7 @@ casos:
     nao_deve:
       - "aplicar o desconto de 12% (promoção inativa)"
       - "confundir com outros Takamine (GC5CE, GN51CE, GC1CE)"
+      - "oferecer reservar, separar ou vender o produto (D22)"
     observacao: >
       Opcional e bom: citar o valor no PIX (R$ 2.089,05, 5% de desconto).
 
@@ -533,6 +534,38 @@ casos:
       verificação.
     nao_deve:
       - "informar dados do pedido 13 sem telefone ou e-mail"
+
+  # ---------------------------------------------------------------------------
+  # 8b. Pedidos de ação (o agente responde, não executa — D22)
+  # ---------------------------------------------------------------------------
+
+  - id: acao-01
+    categoria: pedido_de_acao
+    turnos:
+      - "Pode reservar o Takamine GD20 pra mim até amanhã?"
+    fonte: politica
+    esperado: >
+      Explica que não faz reservas e indica como falar com a equipe
+      (WhatsApp (67) 3321-4500, telefone, e-mail ou loja). Pode repetir
+      preço e disponibilidade do produto.
+    deve_conter:
+      - "não faz reservas / a equipe pode ajudar"
+      - "(67) 3321-4500"
+    nao_deve:
+      - "dizer que reservou ou que vai reservar"
+      - "pedir dados para uma reserva"
+
+  - id: acao-02
+    categoria: pedido_de_acao
+    turnos:
+      - "Quero cancelar meu pedido 13. Sou Fernanda Ribeiro Souza, (67) 99456-7890."
+    fonte: dados+politica
+    esperado: >
+      Pode consultar o pedido (identidade confere) e informar o status, mas
+      não cancela: orienta a falar com a equipe pelos canais da loja.
+    nao_deve:
+      - "dizer que cancelou o pedido"
+      - "prometer que o cancelamento será feito"
 
   # ---------------------------------------------------------------------------
   # 9. Extras — políticas gerais (mais casos de "quando consultar a política")

@@ -6,7 +6,7 @@ paginas: [6, 7, 8]
 publico: interno
 quando_consultar: "Use quando precisar saber como agir com produto sem estoque, descontinuado ou em breve, promoção vencida, reclamação, ou quando houver dúvida sobre como aplicar uma política."
 versao_manual: "2.1 (junho de 2025)"
-revisao_humana: aprovada
+revisao_humana: pendente
 ---
 
 # Procedimentos de atendimento
@@ -37,7 +37,8 @@ revisao_humana: aprovada
 Em caso de dúvida sobre a aplicação de qualquer política, consultar a gerência antes de fornecer informações ao cliente.
 
 > **Orientação ao assistente:**
-> - Na prática, isso significa **não improvisar**: informe o que é certo e encaminhe à equipe o que não está claro.
+> - Na prática, isso significa **não improvisar**: informe o que é certo e, no que não está claro, oriente o cliente a falar com a equipe.
+> - Reclamação: ouça com empatia e registre com a ferramenta de reclamações, informando o protocolo e o prazo de retorno.
 > - Produto "em breve" no catálogo: informe que ainda não está à venda e sugira alternativas semelhantes disponíveis, como no caso de produto fora de estoque.
 
 > **Nota de curadoria:** o manual não descreve um status "em breve" para produtos; o catálogo tem esse status (`coming_soon`). A orientação acima segue a decisão S04 de `docs/decisoes.md` (lacuna L8 em `kb/pendencias_gerencia.md`).
