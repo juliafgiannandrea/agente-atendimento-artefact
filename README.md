@@ -9,7 +9,7 @@ Protótipo de um agente de atendimento por mensagens de texto para a Empório da
 ```
 data/raw/        CSVs e PDF de políticas originais, intocados
 etl/             ETL: schema, pipeline, verificações de qualidade e relatório → data/emporio.db
-kb/              políticas em Markdown, índice e persona
+kb/              base de conhecimento: políticas por seção, índice, persona e pendências
 src/agente/      agente (Strands), tools, configuração do modelo e CLI
 tests/           testes automatizados (pytest)
 tests/eval_set/  perguntas de teste do agente com resposta esperada
@@ -45,7 +45,17 @@ sqlitebrowser data/emporio.db
 
 Tabelas `raw_*` são a origem (bronze), as demais tabelas são a camada tratada (silver), e as views `vw_catalogo` e `vw_pedidos` são o que o agente consulta (gold). Os resultados das verificações de qualidade ficam em `dq_results`.
 
-### 2. Rodar os testes
+### 2. Base de conhecimento (opcional)
+
+A base de políticas já vem pronta em [`kb/`](kb/index.md). Para refazer a extração do PDF (por exemplo, quando o manual for atualizado):
+
+```bash
+python -m etl.extrair_politicas
+```
+
+Gera `kb/_fonte/manual_extraido.md`. As seções em `kb/politicas/` são curadas a partir desse texto e revisadas à mão.
+
+### 3. Rodar os testes
 
 ```bash
 pytest

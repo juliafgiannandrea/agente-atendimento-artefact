@@ -96,11 +96,24 @@ Cada decisão traz o contexto, a escolha e o motivo. Este arquivo alimenta a se�
 - **Rótulos de status de pedido:** a base não define o significado de `pending` e `confirmed`. Os rótulos usados ("Pedido recebido, aguardando processamento" e "Pedido confirmado, em preparação para envio") são uma interpretação neutra, que não promete prazos.
 - **Pacote instalável:** `pyproject.toml` + `-e .` no `requirements.txt` tornam `agente` e `etl` importáveis de qualquer diretório, sem manipular `sys.path`.
 
+## D15 — Base de conhecimento em Markdown por seção, com índice (divulgação progressiva)
+
+- **Contexto:** o manual tem 8 páginas e 10 seções. Cada pergunta do cliente costuma precisar de uma ou duas delas.
+- **Decisão:** `kb/` com um arquivo por seção do manual (`kb/politicas/*.md`), um `kb/index.md` que descreve quando consultar cada seção, a persona em `kb/soul.md` e as contradições em `kb/pendencias_gerencia.md`. O agente lê o índice e carrega só a seção necessária, por meio de uma tool. Sem banco vetorial nem embeddings.
+- **Motivo:**
+  - **Por que não RAG vetorial:** com 9 seções curtas, um índice escrito à mão é mais preciso que busca por similaridade e não perde contexto ao cortar o texto em pedaços. Também é auditável: dá para ver exatamente qual seção o agente leu para responder. Com um manual muito maior, a busca vetorial passaria a valer a pena.
+  - **Por que não o manual inteiro no prompt:** caberia, mas misturaria regras de assuntos diferentes em toda resposta, gastaria tokens em todo turno e dificultaria saber em que o agente se baseou.
+- **Pipeline:** `python -m etl.extrair_politicas` gera `kb/_fonte/manual_extraido.md` (texto bruto do PDF, automático). As seções em `kb/politicas/` são curadoria a partir desse texto: reorganizadas, com as decisões S02, S03 e S07 aplicadas e com notas de curadoria (blocos `> Nota de curadoria`) que separam o que é do manual do que é interpretação.
+- **Dois tipos de nota:** blocos `> **Orientação ao assistente:**` dizem ao agente como agir e são entregues a ele; blocos `> **Nota de curadoria:**` registram a origem de decisões e lacunas para humanos e são removidos por `src/agente/kb.py` antes de chegar ao agente. Assim, referências internas (como "S03" ou "docs/decisoes.md") nunca aparecem na conversa com o cliente, e quem audita a base continua vendo de onde veio cada decisão. Um teste garante que o texto entregue ao agente não contém essas referências.
+- **Índice para o agente:** gerado dos cabeçalhos das seções (`id`, `titulo`, `quando_consultar`), e não do `kb/index.md`, que é a documentação para humanos. Assim o índice do agente não fica desatualizado.
+- **Governança:** cada seção tem no cabeçalho a versão do manual, as páginas de origem, o público (`cliente` ou `interno`) e o status de revisão humana. A seção 7 do manual vira duas peças: as diretrizes de tom (7.1) vão para a persona; o fluxo e as situações especiais (7.2 e 7.3) ficam numa seção interna, que orienta o agente mas não é citada ao cliente.
+- **Testes de fidelidade:** `tests/test_kb.py` extrai todo valor verificável das seções curadas (preços, percentuais, prazos, telefones, e-mails, leis) e confere que ele existe no texto do PDF. Se a curadoria introduzir um valor que não está no manual, o teste falha.
+
 ---
 
 ## Suposições (o enunciado não define)
 
-As suposições S01 a S03 e S06 são decisões minhas diante de informações ausentes ou divergentes nos materiais. Os IDs entre crases referem-se aos casos de `tests/eval_set/perguntas.yaml`.
+As suposições S01 a S03, S06 e S07 são decisões minhas diante de informações ausentes ou divergentes nos materiais. Os IDs entre crases referem-se aos casos de `tests/eval_set/perguntas.yaml`.
 
 - **S01 — Data de referência simulada: 25/03/2026 (quarta-feira).**
   - **Problema:** os pedidos vão de out/2025 a 22/03/2026. Com a data real (nov/2026):
@@ -142,3 +155,8 @@ As suposições S01 a S03 e S06 são decisões minhas diante de informações au
   - **Decisão (minha):** se um produto tiver mais de uma promoção ativa, nenhuma é aplicada, o produto é vendido pelo preço de tabela e o ETL registra um alerta para a equipe resolver.
   - **Motivo:** escolher automaticamente (por exemplo, o maior desconto) seria uma decisão comercial tomada pelo sistema sem autorização. Aplicar o preço de tabela evita prometer um desconto que pode não valer, como pede o manual (seção 7.3), e o alerta torna o conflito visível em vez de escondê-lo.
   - **Duplicatas inativas:** são registradas como alerta informativo, sem efeito no preço.
+
+- **S07 — E-mail de contato: contato@emporiodamusica.com.br (sem acento).**
+  - **Problema:** o manual traz duas grafias. A capa usa contato@emporiodamusica.com.br; a tabela "Dados da Empresa" (seção 1.2) usa contato@empóriodamusica.com.br, com acento.
+  - **Decisão:** uso a grafia sem acento, a mesma da capa. Domínios com acento raramente funcionam em todos os provedores de e-mail, e a versão com acento parece erro de digitação.
+  - **Registro:** a divergência entra na lista de pendências para a gerência (`kb/pendencias_gerencia.md`, P2).
