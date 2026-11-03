@@ -36,6 +36,15 @@ python -m etl.pipeline
 
 Lê `data/raw/`, gera `data/emporio.db` (SQLite, com camadas bronze, silver e gold) e o relatório [`docs/data_quality.md`](docs/data_quality.md). Pode ser executado quantas vezes quiser: o banco é reconstruído do zero e o resultado é sempre o mesmo.
 
+Para explorar o banco numa interface gráfica (Linux), use o DB Browser for SQLite:
+
+```bash
+sudo apt install sqlitebrowser
+sqlitebrowser data/emporio.db
+```
+
+Tabelas `raw_*` são a origem (bronze), as demais tabelas são a camada tratada (silver), e as views `vw_catalogo` e `vw_pedidos` são o que o agente consulta (gold). Os resultados das verificações de qualidade ficam em `dq_results`.
+
 ### 2. Rodar os testes
 
 ```bash
