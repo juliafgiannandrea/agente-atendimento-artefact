@@ -53,10 +53,9 @@ def nova_conversa() -> None:
         st.session_state.pop(chave, None)
 
 
-def responder_com_progresso(atendente: Atendente, mensagem: str) -> Resposta:
-    """Chama o agente mostrando o progresso em tempo real: o checklist do plano,
-    quando há um, ou uma linha de status com a etapa atual."""
-    area = st.empty()
+def responder_com_progresso(atendente: Atendente, mensagem: str, area) -> Resposta:
+    """Chama o agente mostrando o progresso em tempo real, dentro de `area`: o
+    checklist do plano, quando há um, ou uma linha de status com a etapa atual."""
     estado = {"plano": None, "concluidas": 0, "rodando": None}
     contexto_streamlit = get_script_run_ctx()
 
@@ -86,7 +85,6 @@ def responder_com_progresso(atendente: Atendente, mensagem: str) -> Resposta:
 
     desenhar()
     resposta = atendente.responder(mensagem, ouvinte=ouvinte)
-    area.empty()
     if resposta.erro:   # detalhe técnico só no terminal de quem roda a UI
         print(f"[aviso] {resposta.erro}", file=sys.stderr)
     return resposta
@@ -116,10 +114,13 @@ def main() -> None:
         st.markdown(f'<div class="em-rodape" style="font-size:13px;margin-top:24px">Pedidos consultados na data '
                     f'de referência {atendente.ctx.reference_date:%d/%m/%Y}.</div>', unsafe_allow_html=True)
 
-    if not historico:
-        with st.chat_message("assistant", avatar=AVATAR_ATENDENTE):
-            st.markdown("Oi! Sou o assistente virtual da Empório da Música. Posso ajudar com produtos, "
-                        "preços, pedidos e as políticas da loja. Como posso ajudar?")
+    # A saudação aparece sempre, como primeira mensagem da conversa. Se ela sumisse
+    # depois da primeira pergunta, todas as mensagens mudariam de posição na
+    # reexecução seguinte e o Streamlit mostraria, enquanto o agente responde,
+    # restos da resposta anterior dentro da mensagem nova.
+    with st.chat_message("assistant", avatar=AVATAR_ATENDENTE):
+        st.markdown("Oi! Sou o assistente virtual da Empório da Música. Posso ajudar com produtos, "
+                    "preços, pedidos e as políticas da loja. Como posso ajudar?")
 
     for item in historico:
         if item["papel"] == "cliente":
@@ -127,7 +128,12 @@ def main() -> None:
                 st.markdown(item["texto"])
         else:
             with st.chat_message("assistant", avatar=AVATAR_ATENDENTE):
-                componentes.renderizar_resposta(item["resposta"])
+                # Mesma estrutura do bloco de resposta ao vivo (um st.empty com um
+                # container dentro). Se a estrutura mudasse entre uma execução e a
+                # seguinte, o Streamlit deixaria na tela, apagados, elementos da
+                # execução anterior enquanto o agente responde à nova mensagem.
+                with st.empty().container():
+                    componentes.renderizar_resposta(item["resposta"])
 
     mensagem = st.chat_input("Escreva sua mensagem…") or pergunta_exemplo
     if mensagem:
@@ -135,8 +141,10 @@ def main() -> None:
         with st.chat_message("user"):
             st.markdown(mensagem)
         with st.chat_message("assistant", avatar=AVATAR_ATENDENTE):
-            resposta = responder_com_progresso(atendente, mensagem)
-            componentes.renderizar_resposta(resposta)
+            area = st.empty()
+            resposta = responder_com_progresso(atendente, mensagem, area)
+            with area.container():
+                componentes.renderizar_resposta(resposta)
         historico.append({"papel": "atendente", "resposta": resposta})
 
 
