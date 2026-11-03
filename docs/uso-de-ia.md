@@ -35,3 +35,17 @@ O enunciado pede que eu explique quais assistentes de IA usei e como. Este arqui
 
 - Defini as categorias que o conjunto precisava cobrir: as 4 perguntas do enunciado, estoque e status, promoções, parcelamento, verificação de identidade, acessórios, fora do escopo e prompt injection.
 - O Claude escreveu 34 casos em `tests/eval_set/perguntas.yaml`, com as respostas esperadas calculadas a partir dos CSVs (preços, promoções ativas, parcelas e titulares dos pedidos), e apontou as suposições que alguns casos exigem (S01 a S05 em `docs/decisoes.md`).
+- Decidi as suposições em aberto: data de referência simulada (S01), regra de parcelamento (S02) e contatos (S03).
+
+### Etapa 2 — ETL
+
+- Antes de implementar, debatemos boas práticas de ETL (camada raw imutável, medallion, idempotência, schema explícito, qualidade de dados como código, sinalizar em vez de corrigir, rastreabilidade) e como cada uma se aplicava a este projeto.
+- Decidi: bronze dentro do banco, pandas + SQL + verificações em Python puro, nenhuma promoção vale quando há duas ativas (S06), dados de clientes no mesmo banco e testes com pytest (D09 a D12).
+- O Claude implementou o pipeline, o schema, as verificações de qualidade, o gerador do relatório e 53 testes. Ao revisar o primeiro relatório, ajustamos a verificação A03, que marcava como inconsistência um item vendido que só esgotou depois (D14).
+
+### Etapa 3 — Base de conhecimento
+
+- Defini a estrutura: seções do manual em Markdown, índice para divulgação progressiva, persona (`soul.md`) a partir da seção 7.1 e uma nota de pendências para a gerência com as contradições do manual.
+- O Claude escreveu o script de extração do PDF, curou as 9 seções, o índice, a persona e as pendências, e criou testes que conferem se cada valor citado nas seções existe no PDF. Além das três contradições que eu tinha levantado, ele apontou 10 lacunas do manual (L1 a L10) e sugeriu a decisão do e-mail (S07).
+- Perguntei se o agente leria as notas de curadoria. Decidi separá-las em dois tipos: orientações ao assistente (o agente lê) e notas de curadoria (removidas pela tool).
+- Pedi uma revisão de fidelidade das 9 seções contra o manual. A revisão comparou cada linha com o PDF e encontrou interpretações que tinham entrado no texto principal (por exemplo, "exceto compras abaixo de R$ 50,00", quando o manual diz só "exceto abaixo de R$ 50,00"). Elas voltaram ao texto original e foram para blocos de orientação ou de curadoria, identificadas como interpretação.

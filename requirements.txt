@@ -10,3 +10,9 @@ pyyaml>=6.0
 # ETL e extração do PDF de políticas
 pandas>=2.2
 pdfplumber>=0.11
+
+# Testes
+pytest>=8.0
+
+# Este projeto (pacotes agente e etl) em modo editável
+-e .

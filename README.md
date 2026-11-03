@@ -8,11 +8,12 @@ Protótipo de um agente de atendimento por mensagens de texto para a Empório da
 
 ```
 data/raw/        CSVs e PDF de políticas originais, intocados
-etl/             tratamento dos dados → gera data/emporio.db (SQLite)
-kb/              políticas em Markdown, índice e persona
+etl/             ETL: schema, pipeline, verificações de qualidade e relatório → data/emporio.db
+kb/              base de conhecimento: políticas por seção, índice, persona e pendências
 src/agente/      agente (Strands), tools, configuração do modelo e CLI
-tests/eval_set/  perguntas de teste com resposta esperada
-docs/            decisões técnicas e registro de uso de IA
+tests/           testes automatizados (pytest)
+tests/eval_set/  perguntas de teste do agente com resposta esperada
+docs/            decisões técnicas, relatório de qualidade de dados e registro de uso de IA
 ```
 
 ## Como rodar
@@ -27,4 +28,39 @@ pip install -r requirements.txt
 cp .env.example .env             # escolha PROVIDER e MODEL_ID e preencha a chave
 ```
 
-Os comandos do ETL e do chat serão adicionados nas próximas etapas.
+### 1. Gerar o banco (ETL)
+
+```bash
+python -m etl.pipeline
+```
+
+Lê `data/raw/`, gera `data/emporio.db` (SQLite, com camadas bronze, silver e gold) e o relatório [`docs/data_quality.md`](docs/data_quality.md). Pode ser executado quantas vezes quiser: o banco é reconstruído do zero e o resultado é sempre o mesmo.
+
+Para explorar o banco numa interface gráfica (Linux), use o DB Browser for SQLite:
+
+```bash
+sudo apt install sqlitebrowser
+sqlitebrowser data/emporio.db
+```
+
+Tabelas `raw_*` são a origem (bronze), as demais tabelas são a camada tratada (silver), e as views `vw_catalogo` e `vw_pedidos` são o que o agente consulta (gold). Os resultados das verificações de qualidade ficam em `dq_results`.
+
+### 2. Base de conhecimento (opcional)
+
+A base de políticas já vem pronta em [`kb/`](kb/index.md). Para refazer a extração do PDF (por exemplo, quando o manual for atualizado):
+
+```bash
+python -m etl.extrair_politicas
+```
+
+Gera `kb/_fonte/manual_extraido.md`. As seções em `kb/politicas/` são curadas a partir desse texto e revisadas à mão.
+
+### 3. Rodar os testes
+
+```bash
+pytest
+```
+
+Os testes usam um banco temporário e não alteram `data/` nem `docs/`.
+
+O comando do chat será adicionado nas próximas etapas.
