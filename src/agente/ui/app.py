@@ -125,7 +125,7 @@ def main() -> None:
     for item in historico:
         if item["papel"] == "cliente":
             with st.chat_message("user"):
-                st.markdown(item["texto"])
+                st.markdown(componentes.texto_markdown(item["texto"]))
         else:
             with st.chat_message("assistant", avatar=AVATAR_ATENDENTE):
                 # Mesma estrutura do bloco de resposta ao vivo (um st.empty com um
@@ -139,7 +139,7 @@ def main() -> None:
     if mensagem:
         historico.append({"papel": "cliente", "texto": mensagem})
         with st.chat_message("user"):
-            st.markdown(mensagem)
+            st.markdown(componentes.texto_markdown(mensagem))
         with st.chat_message("assistant", avatar=AVATAR_ATENDENTE):
             area = st.empty()
             resposta = responder_com_progresso(atendente, mensagem, area)

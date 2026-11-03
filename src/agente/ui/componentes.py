@@ -10,13 +10,11 @@ ser testadas sem Streamlit. Todo valor vindo dos dados passa por `escape`.
 
 from __future__ import annotations
 
-import re
 from datetime import date
 from html import escape
 
 import streamlit as st
 
-from agente import kb
 from agente.agente import ChamadaTool, Resposta
 
 # Como cada tool aparece para o cliente no progresso (nada de nomes técnicos)
@@ -260,19 +258,6 @@ RENDERIZADORES_HTML = {
 }
 
 
-def politica_para_cliente(chamada: ChamadaTool) -> tuple[str, str] | None:
-    """(título, texto) da política consultada, sem as orientações internas ao
-    assistente. Seções de uso interno não são exibidas."""
-    secao = (chamada.entrada or {}).get("secao", "")
-    info = kb.secoes().get(secao)
-    if info is None or info.publico == "interno" or not isinstance(chamada.resultado, str):
-        return None
-    sem_citacoes = "\n".join(l for l in chamada.resultado.splitlines() if not l.lstrip().startswith(">"))
-    corpo = re.sub(r"^# .*\n", "", sem_citacoes, count=1).strip()
-    corpo = re.sub(r"^## ", "#### ", corpo, flags=re.M)
-    return info.titulo, re.sub(r"\n{3,}", "\n\n", corpo)
-
-
 # ============================================================================
 # Resposta completa
 # ============================================================================
@@ -288,32 +273,32 @@ def ultimo_plano(chamadas: list[ChamadaTool]) -> tuple[dict | None, int]:
     return plano, depois
 
 
+def texto_markdown(texto: str) -> str:
+    """Prepara texto livre para st.markdown. O Streamlit lê `$...$` como fórmula
+    LaTeX, então dois valores em reais na mesma mensagem ("R$ 2.089,05 ... R$ 183,25")
+    viravam uma fórmula e sumiam com a formatação. O cifrão escapado é exibido normal."""
+    return texto.replace("$", "\\$")
+
+
 def renderizar_resposta(resposta: Resposta) -> None:
     """Ordem: plano (se houver), cartões com os dados consultados e, por último,
-    o texto do atendente, que comenta o que está nos cartões."""
+    o texto do atendente, que comenta o que está nos cartões. As políticas
+    consultadas não aparecem: são material interno da loja e o cliente recebe só
+    a regra que responde à pergunta, no texto do atendente."""
     plano, concluidas = ultimo_plano(resposta.chamadas)
     if plano:
         st.markdown(html_plano(plano, concluidas, rodando=False, finalizado=True), unsafe_allow_html=True)
 
-    cartoes, politicas, vistos = [], [], set()
+    cartoes = []
     for chamada in resposta.chamadas:
-        if chamada.nome == "ler_politica":
-            politica = politica_para_cliente(chamada)
-            if politica and politica[0] not in vistos:
-                vistos.add(politica[0])
-                politicas.append(politica)
-            continue
         funcao = RENDERIZADORES_HTML.get(chamada.nome)
         html = funcao(chamada.resultado) if funcao else None
         if html:
             cartoes.append(html)
 
-    if cartoes or politicas:
+    if cartoes:
         st.markdown('<div class="em-rotulo-fontes">Fontes desta resposta</div>', unsafe_allow_html=True)
     for html in cartoes:
         st.markdown(html, unsafe_allow_html=True)
-    for titulo, texto in politicas:
-        with st.expander(f"Política consultada · {titulo}"):
-            st.markdown(texto)
 
-    st.markdown(resposta.texto)
+    st.markdown(texto_markdown(resposta.texto))

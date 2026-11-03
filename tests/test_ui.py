@@ -97,18 +97,10 @@ def test_cartao_de_busca(tools):
     assert "12 encontrado(s)" in html and html.count("<tr>") == 13
 
 
-def test_politica_para_cliente_sem_orientacoes_internas(tools):
-    chamada = ChamadaTool("ler_politica", {"secao": "frete-e-entregas"},
-                          tools["ler_politica"]("frete-e-entregas"))
-    titulo, texto = c.politica_para_cliente(chamada)
-    assert titulo == "Frete, entregas e rastreamento"
-    assert "R$ 35,00" in texto and "Orientação ao assistente" not in texto
-
-
-def test_politica_interna_nao_e_exibida(tools):
-    chamada = ChamadaTool("ler_politica", {"secao": "procedimentos-de-atendimento"},
-                          tools["ler_politica"]("procedimentos-de-atendimento"))
-    assert c.politica_para_cliente(chamada) is None
+def test_cifrao_nao_vira_formula():
+    # Dois "R$" na mesma mensagem eram lidos como fórmula LaTeX pelo Streamlit.
+    assert c.texto_markdown("PIX por **R$ 2.089,05** ou 12x de R$ 183,25") == \
+        "PIX por **R\\$ 2.089,05** ou 12x de R\\$ 183,25"
 
 
 def test_resultado_inesperado_nao_gera_cartao():
@@ -141,7 +133,7 @@ def test_conversa_mostra_texto_e_cartao(ctx):
     app.chat_input[0].set_value("Quanto custa o Takamine GD20?").run()
     textos = _textos(app)
     assert not app.exception
-    assert "O **Takamine GD20** sai por R$ 2.199,00." in textos
+    assert "O **Takamine GD20** sai por R\\$ 2.199,00." in textos      # cifrão escapado
     assert "Fontes desta resposta" in textos and "R$ 2.089,05" in textos     # cartão do produto
     assert textos.index("R$ 2.089,05") < textos.index("O **Takamine GD20**")  # cartão antes do texto
 
@@ -176,3 +168,15 @@ def test_configuracao_incompleta_mostra_erro(monkeypatch):
     monkeypatch.setenv("PROVIDER", "")
     app = AppTest.from_file(APP, default_timeout=30).run()
     assert "Configuração incompleta" in app.error[0].value
+
+
+def test_politica_consultada_nao_aparece_para_o_cliente(ctx):
+    modelo = ModeloRoteirizado([("tool", "ler_politica", {"secao": "frete-e-entregas"}),
+                                ("texto", "Em Campo Grande, o frete é grátis acima de R$ 500,00.")])
+    app = _app(Atendente(ctx, model=modelo, canal="ui"))
+    app.chat_input[0].set_value("Quanto custa o frete?").run()
+    textos = _textos(app)
+    assert not app.exception
+    assert "frete é grátis" in textos
+    assert not app.expander and "Fontes desta resposta" not in textos
+    assert "R$ 35,00" not in textos                       # nada do texto da política
