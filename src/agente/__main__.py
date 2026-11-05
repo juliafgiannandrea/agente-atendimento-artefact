@@ -15,6 +15,7 @@ from __future__ import annotations
 
 import argparse
 import logging
+import re
 import sys
 from datetime import datetime
 from pathlib import Path
@@ -23,6 +24,15 @@ from agente.config import ROOT_DIR, ConfigError, Settings
 from agente.contexto import Contexto
 
 EXEMPLOS_DIR = ROOT_DIR / "exemplos"
+
+
+def limpa_markdown(texto: str) -> str:
+    """Remove negrito/itálico e títulos que o modelo às vezes usa mesmo instruído a não usar:
+    no terminal (e no WhatsApp) eles apareceriam como asteriscos."""
+    texto = re.sub(r"\*\*(.+?)\*\*", r"\1", texto, flags=re.S)
+    texto = re.sub(r"__(.+?)__", r"\1", texto, flags=re.S)
+    texto = re.sub(r"(?<![\w*])\*(?!\s)(.+?)(?<!\s)\*(?![\w*])", r"\1", texto)
+    return re.sub(r"^#{1,6}\s+", "", texto, flags=re.M)
 
 
 def _exporta(historico: list[tuple[str, str, list[str]]], destino: Path, settings: Settings) -> Path:
@@ -98,6 +108,7 @@ def main(argv: list[str] | None = None) -> int:
             continue
 
         resposta = atendente.responder(mensagem)
+        resposta.texto = limpa_markdown(resposta.texto)
         if args.debug and resposta.ferramentas:
             print(f"  [ferramentas: {', '.join(resposta.ferramentas)}]")
         if resposta.erro:

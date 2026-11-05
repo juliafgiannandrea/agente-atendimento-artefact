@@ -122,7 +122,7 @@ def test_soul_cobre_diretrizes_da_secao_7_1():
     soul = (KB_DIR / "soul.md").read_text(encoding="utf-8").lower()
     for trecho in ["informal, mas profissional", "amigo que entende de música",
                    "exclusivamente com instrumentos musicais", "propaganda enganosa",
-                   "informe quando ela retorna"]:
+                   "informe quando ela retorna", "você responde, não executa"]:
         assert trecho in soul
 
 

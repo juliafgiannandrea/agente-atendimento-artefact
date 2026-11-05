@@ -169,6 +169,38 @@ Cada decisão traz o contexto, a escolha e o motivo. Este arquivo alimenta a se�
   - restringir a perguntas com várias fontes evita gastar uma requisição a mais nas perguntas simples, que são a maioria.
 - **Alternativas descartadas:** instrução de planejamento só no prompt (invisível); planejador separado no estilo *plan-and-execute* (dobra as chamadas ao modelo em toda mensagem e falha mais com modelos gratuitos); raciocínio nativo do modelo (depende do provedor e não tem estrutura).
 
+
+## D21 — Interface web em Streamlit, com cartões montados a partir das tools
+
+- **Contexto:** o CLI mostra só texto. A UI deveria mostrar respostas "renderizadas", sem perder a confiabilidade dos dados.
+- **Decisão:** Streamlit (`src/agente/ui/`), reaproveitando o mesmo `Atendente` do CLI. A resposta tem duas camadas, exibidas nesta ordem: o plano (quando há), os cartões e, por último, o texto, que comenta o que está nos cartões:
+  - o **texto** do modelo, em Markdown leve (o prompt tem um formato por canal: `texto` proíbe Markdown, `ui` permite negrito e listas);
+  - **cartões** montados a partir do **resultado das tools**, não do texto: produto (preço, promoção, PIX, parcelas, alternativas), busca (tabela), pedido (status, prazos, atraso), horário, protocolo de reclamação e o trecho da política consultada.
+- **Motivo:** os cartões mostram exatamente o que saiu do banco ou da base de políticas; o modelo não tem como "inventar" um cartão. Também deixam visível ao avaliador qual fonte foi usada em cada resposta. A alternativa de pedir ao modelo uma saída estruturada (JSON de blocos) foi descartada por falhar com frequência em modelos gratuitos.
+- **Plano como checklist em tempo real:** o `Atendente` aceita um ouvinte que é avisado quando cada tool começa e termina (hooks `BeforeToolCallEvent` e `AfterToolCallEvent` do Strands). A UI desenha o plano registrado por `planejar` e marca um passo a cada tool concluída; o último passo fecha com a resposta. Sem plano, aparece uma linha de status ("Consultando o pedido…"). Como os passos do plano são texto livre do modelo, o vínculo passo ↔ tool é aproximado: é uma indicação de progresso, não um rastreio exato.
+- **Detalhes técnicos invisíveis:** nomes de tools, SQL e erros do provedor não aparecem para o cliente. Políticas de uso interno e as orientações ao assistente não são exibidas. Erros técnicos vão para o terminal de quem roda a UI.
+- **Segurança:** todo valor vindo dos dados ou do modelo é escapado antes de entrar no HTML dos cartões.
+- **Estado:** o `Atendente` e o histórico ficam em `st.session_state` (um por aba), para que o Streamlit redesenhe a conversa sem chamar o modelo de novo.
+- **Identidade visual:** inspirada na Artefact (azul-marinho `#0D1634`, magenta e roxo, IBM Plex Sans, botões em pílula). O magenta da marca (`#FF0066`) tem contraste 3,9:1 com texto branco; onde há texto, usa-se `#E0005A` (4,9:1).
+
+
+## D22 — O agente responde, não executa (exceto registrar reclamações)
+
+- **Contexto:** num teste, o agente fechou a resposta sobre o Takamine GD20 com "Quer que eu reserve?". O desafio pede um agente que **responda** às perguntas dos clientes, e o agente não tem como reservar, vender ou alterar nada.
+- **Decisão (minha):** o agente não executa nem oferece ações: reservar ou separar produtos, fechar compras, gerar links de pagamento, cancelar ou alterar pedidos, aprovar trocas ou devoluções, agendar. Quando o cliente quer algo assim, ele explica a política e indica os canais da equipe (WhatsApp, telefone, e-mail ou a loja). O fechamento pergunta se há mais alguma dúvida, sem oferecer ações.
+- **Exceção:** `registrar_reclamacao` foi mantida. O manual (seção 7.3) pede que a reclamação seja registrada e encaminhada ao responsável, com retorno em 24 horas úteis.
+- **Onde está:** regra no prompt (`src/agente/prompt.py`), princípio na persona (`kb/soul.md`) e as orientações da base de políticas, que passaram de "encaminhe à equipe" para "oriente o cliente a falar com a equipe". As seções alteradas voltaram para `revisao_humana: pendente`.
+
+---
+
+## D23 — O agente só responde: sem ajuda extra nem perguntas de refinamento; a UI não mostra as políticas
+
+- **Contexto:** perguntando sobre saxofone (a loja não tem instrumentos de sopro no sistema), o agente respondeu "Você procura algum modelo específico (alto, tenor, soprano) ou tem alguma faixa de preço em mente? Posso te avisar se chegar algo novo...". A pergunta já tinha resposta, e "avisar" é uma ação que ele não executa. Na UI, a política consultada aparecia num expansor "Política consultada".
+- **Decisão (minha):** o agente existe para tirar das costas da equipe as perguntas recorrentes, então responde o que foi perguntado e para. Não oferece ajuda além do que foi pedido, não promete nada para depois e não pergunta preferências (orçamento, modelo) para refinar uma resposta que já pode dar. Pergunta apenas o que falta para conseguir responder (identificação do cliente, número do pedido, qual produto). Quando não tem a informação, diz isso e indica os canais da equipe, em vez de "vou verificar com a equipe".
+- **O que continua, porque o manual pede (seções 7.2 e 7.3):** sugerir alternativas semelhantes quando o produto está sem estoque ou fora de linha, e fechar perguntando, no máximo, se ficou alguma dúvida.
+- **Políticas na UI:** o manual é material interno da loja. A UI deixou de mostrar o texto das políticas consultadas; o cliente recebe só a regra que responde à pergunta, no texto do atendente. Os cartões continuam para dados do sistema (produto, pedido, prazos, horário, protocolo).
+- **Onde está:** `kb/soul.md` (princípios 1 e 6 e o fluxo de atendimento), `src/agente/prompt.py` e `src/agente/ui/componentes.py`.
+
 ---
 
 ## Suposições (o enunciado não define)

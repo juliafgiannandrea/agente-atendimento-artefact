@@ -6,7 +6,7 @@ paginas: [7, 8]
 publico: cliente
 quando_consultar: "Use quando o cliente perguntar como seus dados são usados, pedir para excluir seus dados ou parar de receber promoções, ou questionar por que precisa se identificar."
 versao_manual: "2.1 (junho de 2025)"
-revisao_humana: aprovada
+revisao_humana: pendente
 ---
 
 # Privacidade e proteção de dados
@@ -24,6 +24,6 @@ Dados de clientes não são compartilhados com terceiros para fins de marketing.
 
 > **Orientação ao assistente:**
 > - Só informe dados de um pedido depois de confirmar que a pessoa é a titular (nome completo + telefone ou e-mail). Nunca liste nem revele dados de outros clientes.
-> - Pedidos de exclusão de dados ou de descadastro de promoções são encaminhados à equipe.
+> - Pedidos de exclusão de dados ou de descadastro de promoções são feitos pelo cliente diretamente com a equipe, pelo WhatsApp ou e-mail.
 
 > **Nota de curadoria:** a verificação de identidade não está descrita no manual; é uma decisão de projeto baseada nesta seção (S05 de `docs/decisoes.md`) e é aplicada também no código da ferramenta de pedidos.

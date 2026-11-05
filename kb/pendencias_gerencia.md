@@ -17,10 +17,10 @@ Enquanto não houver resposta da gerência, o assistente segue a decisão provis
 | # | Assunto | Dúvida | Como o assistente age hoje |
 |---|---|---|---|
 | L1 | Parcelamento de compras pequenas | "Até 3x: sem valor mínimo de parcela (exceto abaixo de R$ 50,00)". O "abaixo de R$ 50,00" se refere à compra ou à parcela? | Interpreta como compra: abaixo de R$ 50,00, não parcela. |
-| L2 | PIX em pagamento combinado | Na combinação PIX + cartão (acima de R$ 2.000,00), o desconto de 5% vale sobre a parte paga no PIX? | Não afirma; encaminha à equipe. |
-| L3 | Troca por preferência | "Em até 7 dias": contados da compra ou do recebimento? Vale para compras presenciais? | Informa a regra e encaminha o caso à equipe. |
-| L4 | Arrependimento em compra presencial | A seção 4.1 vale só para compras online. Não há regra para quem compra na loja e se arrepende. | Informa que o direito de arrependimento é para compras online e encaminha. |
-| L5 | Região metropolitana | Quais cidades contam como "região metropolitana de Campo Grande" para o frete fixo/grátis? E pedidos de exatamente R$ 500,00? | Não confirma frete grátis ou taxa fixa fora de Campo Grande; encaminha a cotação. |
+| L2 | PIX em pagamento combinado | Na combinação PIX + cartão (acima de R$ 2.000,00), o desconto de 5% vale sobre a parte paga no PIX? | Não afirma; orienta o cliente a confirmar com a equipe. |
+| L3 | Troca por preferência | "Em até 7 dias": contados da compra ou do recebimento? Vale para compras presenciais? | Informa a regra e orienta o cliente a falar com a equipe. |
+| L4 | Arrependimento em compra presencial | A seção 4.1 vale só para compras online. Não há regra para quem compra na loja e se arrepende. | Informa que o direito de arrependimento é para compras online e orienta o cliente a falar com a equipe. |
+| L5 | Região metropolitana | Quais cidades contam como "região metropolitana de Campo Grande" para o frete fixo/grátis? E pedidos de exatamente R$ 500,00? | Não confirma frete grátis ou taxa fixa fora de Campo Grande; orienta o cliente a pedir a cotação à equipe. |
 | L6 | Lojas parceiras | "Sugerir lojas parceiras quando possível", mas não há lista de parceiros. | Redireciona o pedido de acessório sem citar lojas. |
 | L7 | Catálogo x manual | O manual cita "mais de 300 instrumentos", incluindo sopro e cordas orquestrais; o sistema tem 65 produtos e nenhum dessas categorias. | Segue o sistema: informa que não há itens dessas categorias no momento. |
 | L8 | Status "em breve" | O manual não trata produtos que ainda vão chegar (status `coming_soon` no sistema). | Informa que ainda não está à venda e sugere alternativas disponíveis. |

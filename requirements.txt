@@ -1,6 +1,9 @@
 # Agente (Strands + provedores Anthropic e OpenAI-compatível/OpenRouter)
 strands-agents[anthropic,openai]>=1.63,<2
 
+# Interface web
+streamlit>=1.40
+
 # Configuração
 python-dotenv>=1.0
 

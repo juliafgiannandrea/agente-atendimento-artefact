@@ -10,7 +10,7 @@ Protótipo de um agente de atendimento por mensagens de texto para a Empório da
 data/raw/        CSVs e PDF de políticas originais, intocados
 etl/             ETL: schema, pipeline, verificações de qualidade e relatório → data/emporio.db
 kb/              base de conhecimento: políticas por seção, índice, persona, pendências e esquema do banco
-src/agente/      agente (Strands), tools, regras de negócio, prompt e CLI
+src/agente/      agente (Strands), tools, regras de negócio, prompt, CLI e interface web (ui/)
 tests/           testes automatizados (pytest)
 tests/eval_set/  perguntas de teste do agente com resposta esperada
 docs/            decisões técnicas, relatório de qualidade de dados e registro de uso de IA
@@ -71,7 +71,19 @@ Se usar um modelo gratuito do OpenRouter, escolha um com suporte a *tool calling
 
 Durante a conversa, `/exportar` salva o diálogo em Markdown em `exemplos/` e `/sair` encerra.
 
-### 4. Rodar os testes
+### 4. Interface web
+
+```bash
+streamlit run src/agente/ui/app.py
+```
+
+Abre o chat no navegador (por padrão em `http://localhost:8501`). Acima do texto do atendente aparecem cartões montados a partir dos dados consultados (produtos, pedidos, prazos). As políticas consultadas não são exibidas, porque o manual é material interno da loja. Em perguntas com várias etapas, o plano do atendente aparece como um checklist que vai sendo marcado em tempo real. A sidebar tem perguntas de exemplo e o botão "Nova conversa".
+
+Rode o comando a partir da raiz do repositório, para o Streamlit usar o tema de `.streamlit/config.toml`.
+
+O desenho da interface foi validado antes da implementação num protótipo visual, com a tela do chat (incluindo o checklist do plano animado), os cartões de cada ferramenta e o diagrama de arquitetura: [protótipo da interface](https://claude.ai/artifact/F9K2UnbBHQe9ksfwDXV8mh).
+
+### 5. Rodar os testes
 
 ```bash
 pytest
