@@ -321,8 +321,8 @@ A revisão humana fez diferença em vários pontos. Na primeira curadoria, inter
 | Limitações conhecidas e o que faria com mais tempo | Seções acima | Atendido |
 | Uso de assistentes de código | Seção acima e `docs/uso-de-ia.md` | Atendido |
 | Repositório público com histórico real de commits | Uma branch e um pull request por etapa, com merge commit, sem force-push | Atendido |
-| 3 a 5 conversas de exemplo, ao menos uma não trivial | `exemplos/` | Pendente (etapa 6) |
-| PDF do README e da documentação (Written Case) | `docs/documentacao.pdf`, gerado por `python docs/gerar_pdf.py` | A gerar após a etapa 6 |
+| 3 a 5 conversas de exemplo, ao menos uma não trivial | 5 conversas em `exemplos/`, entre elas a devolução do pedido 4 (identidade, dados do pedido e política juntos), e capturas da interface web nesta página | Atendido |
+| PDF do README e da documentação (Written Case) | `docs/documentacao.pdf`, gerado por `python docs/gerar_pdf.py` | Atendido |
 
 ---
 
