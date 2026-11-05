@@ -229,7 +229,7 @@ As contradições e lacunas do manual foram reunidas em [`kb/pendencias_gerencia
 - **Sem avaliador de saída.** Nenhuma etapa confere o texto final contra os resultados das ferramentas antes de enviá-lo. Os cartões da interface mitigam isso, mostrando os dados de origem.
 - **Verificação de identidade simples.** Nome e telefone ou e-mail não são segredos. Num sistema real, o pedido seria consultado num canal autenticado ou com um código enviado ao cliente.
 - **Sem passagem real para a equipe.** As reclamações ficam num SQLite local, sem notificação para ninguém. Quando algo depende da equipe, o agente indica os canais, mas não transfere a conversa.
-- **Histórico da web não persiste,** de propósito (ver Persistência do histórico).
+- **Sem memória entre sessões.** A conversa da web some ao recarregar a página, de propósito (ver Persistência do histórico), e o agente não lembra de atendimentos anteriores do mesmo cliente.
 - **Progresso do plano é aproximado.** Os passos do plano são texto livre do modelo, e a interface marca um passo a cada ferramenta concluída. É uma indicação de progresso, não um rastreio exato.
 - **Base de conhecimento curada à mão.** Se o manual mudar, as seções precisam ser revisadas de novo. Os testes pegam valores que não estão no PDF, mas não regras que deixaram de ser incluídas.
 - **Catálogo e manual divergem.** O manual cita instrumentos de sopro e cordas orquestrais, mas o sistema não tem nenhum produto dessas categorias. O agente segue o sistema.
@@ -242,6 +242,9 @@ As contradições e lacunas do manual foram reunidas em [`kb/pendencias_gerencia
 - Um **avaliador de saída** que confira valores, datas e afirmações do texto contra os resultados das ferramentas antes de enviar.
 - **Avaliação automatizada contínua:** rodar o conjunto de perguntas a cada mudança de prompt ou ferramenta, com um modelo como avaliador para os critérios qualitativos e comparação entre modelos.
 
+**Experiência do cliente**
+- **Memória persistida entre sessões:** o cliente voltar outro dia, ou por outro canal, e o agente lembrar da conversa e do que já foi informado (pedido em andamento, produto de interesse, reclamação aberta). Hoje a memória vale só durante a conversa; no CLI, `--sessao` grava em disco local. Em produção, as sessões ficariam num armazenamento gerenciado (o Strands já tem um gerenciador de sessões para S3), ligadas a um cliente autenticado, com retenção e exclusão conforme a LGPD e os dados pessoais separados do catálogo.
+
 **Operação**
 - **Observabilidade:** traces das chamadas (o Strands exporta OpenTelemetry), custo e latência por resposta e taxa de uso de cada ferramenta.
 - **Passagem real para a equipe:** integração com a API do WhatsApp Business e uma fila de atendimento humano, com as reclamações notificadas ao responsável.
@@ -250,7 +253,6 @@ As contradições e lacunas do manual foram reunidas em [`kb/pendencias_gerencia
 
 **Segurança e dados**
 - **Identidade forte** para consultar pedidos (código por SMS ou e-mail) e um classificador de prompt injection na entrada.
-- **Histórico persistente** com cliente autenticado e retenção conforme a LGPD, com os dados pessoais separados do catálogo.
 - **ETL de produção:** carga incremental, orquestração (Airflow) e validação com Pandera ou Great Expectations quando os dados vierem de um sistema vivo.
 - **Base de conhecimento versionada,** com fluxo de aprovação da gerência a cada mudança do manual, e busca vetorial se o manual crescer.
 
