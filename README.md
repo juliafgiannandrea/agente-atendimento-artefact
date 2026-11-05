@@ -210,7 +210,7 @@ As contradições e lacunas do manual foram reunidas em [`kb/pendencias_gerencia
 
 ## Exemplos de conversa
 
-*As conversas de exemplo em texto ficam em [`exemplos/`](exemplos/), geradas na etapa 6 (avaliação).* Cenários:
+A conversa de exemplo em texto está em [`exemplos/conversa.md`](exemplos/conversa.md), gerada na etapa 6 (avaliação). Ela cobre 5 cenários, gravados numa única sessão do CLI:
 
 | Cenário | Por que é relevante |
 |---|---|
@@ -321,7 +321,7 @@ A revisão humana fez diferença em vários pontos. Na primeira curadoria, inter
 | Limitações conhecidas e o que faria com mais tempo | Seções acima | Atendido |
 | Uso de assistentes de código | Seção acima e `docs/uso-de-ia.md` | Atendido |
 | Repositório público com histórico real de commits | Uma branch e um pull request por etapa, com merge commit, sem force-push | Atendido |
-| 3 a 5 conversas de exemplo, ao menos uma não trivial | 5 conversas em `exemplos/`, entre elas a devolução do pedido 4 (identidade, dados do pedido e política juntos), e capturas da interface web nesta página | Atendido |
+| 3 a 5 conversas de exemplo, ao menos uma não trivial | 5 cenários em `exemplos/conversa.md`, entre eles a devolução do pedido 4 (identidade, dados do pedido e política juntos), e capturas da interface web nesta página | Atendido |
 | PDF do README e da documentação (Written Case) | `docs/documentacao.pdf`, gerado por `python docs/gerar_pdf.py` | Atendido |
 
 ---
@@ -339,5 +339,5 @@ src/agente/ui/       interface web (Streamlit)
 tests/               testes automatizados (pytest) e modelo roteirizado
 tests/eval_set/      perguntas de teste com resposta esperada
 docs/                arquitetura, processo, decisões, uso de IA, relatório de qualidade e PDF
-exemplos/            conversas de exemplo (etapa 6)
+exemplos/            conversa de exemplo com os 5 cenários (etapa 6)
 ```
