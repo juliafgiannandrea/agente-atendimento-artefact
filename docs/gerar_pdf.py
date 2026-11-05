@@ -1,7 +1,10 @@
-"""Gera docs/documentacao.pdf a partir do README e da documentação.
+"""Gera os PDFs do projeto a partir do README e da documentação.
 
-O PDF é o anexo pedido no Written Case. Ele é sempre gerado a partir dos .md, para
-nunca divergir do que está no repositório.
+- docs/readme.pdf: só o README. É o arquivo de envio do Written Case.
+- docs/documentacao.pdf: README, arquitetura, processo, decisões, uso de IA e anexos.
+
+Os PDFs são sempre gerados a partir dos .md, para nunca divergirem do que está no
+repositório.
 
 Uso (a partir da raiz do repositório):
     pip install -r requirements-docs.txt
@@ -24,11 +27,10 @@ from markdown_it import MarkdownIt
 from playwright.sync_api import sync_playwright
 
 RAIZ = Path(__file__).resolve().parents[1]
-SAIDA = RAIZ / "docs" / "documentacao.pdf"
 REPO_PADRAO = "https://github.com/juliafgiannandrea/agente-atendimento-artefact"
 
 # (arquivo, título no PDF). A ordem é a ordem de leitura sugerida.
-CAPITULOS = [
+CAPITULOS_COMPLETOS = [
     ("README.md", "Visão geral (README)"),
     ("docs/arquitetura.md", "Arquitetura"),
     ("docs/processo.md", "Processo: o que foi feito em cada etapa"),
@@ -38,6 +40,12 @@ CAPITULOS = [
     ("kb/pendencias_gerencia.md", "Anexo B — Pendências para a gerência"),
     ("kb/soul.md", "Anexo C — Persona do agente"),
 ]
+
+# arquivo de saída -> (capítulos, descrição na capa)
+VERSOES = {
+    "docs/readme.pdf": ([("README.md", "README")], "README do projeto"),
+    "docs/documentacao.pdf": (CAPITULOS_COMPLETOS, "Documentação completa: README, arquitetura, processo, decisões e uso de IA"),
+}
 
 CSS = """
 @page { size: A4; margin: 20mm 18mm 20mm 18mm; }
@@ -133,15 +141,15 @@ def _corrige_links(corpo: str, origem: Path, ancoras: dict[Path, str], repo: str
     return re.sub(r'<a href="([^"]+)">(.*?)</a>', link, corpo, flags=re.S)
 
 
-def montar_html(repo: str | None) -> str:
+def montar_html(repo: str | None, capitulos_md: list[tuple[str, str]], descricao: str) -> str:
     md = MarkdownIt("commonmark", {"html": True}).enable("table")
-    ancoras = {(RAIZ / arquivo).resolve(): f"cap-{i}" for i, (arquivo, _) in enumerate(CAPITULOS, 1)}
+    ancoras = {(RAIZ / arquivo).resolve(): f"cap-{i}" for i, (arquivo, _) in enumerate(capitulos_md, 1)}
 
     capitulos, sumario = [], []
-    for i, (arquivo, titulo) in enumerate(CAPITULOS, 1):
+    for i, (arquivo, titulo) in enumerate(capitulos_md, 1):
         origem = RAIZ / arquivo
         texto = _sem_frontmatter(origem.read_text(encoding="utf-8"))
-        texto = re.sub(r"^# .*\n", "", texto, count=1)          # o título vem de CAPITULOS
+        texto = re.sub(r"^# .*\n", "", texto, count=1)          # o título vem da lista de capítulos
         corpo = md.render(texto)
 
         secoes = []
@@ -156,7 +164,7 @@ def montar_html(repo: str | None) -> str:
         capitulos.append(f'<section class="capitulo"><h1 id="cap-{i}">{html.escape(titulo)}</h1>{corpo}</section>')
 
         itens = "".join(f'<li><a href="#{a}">{html.escape(t)}</a></li>' for a, t in secoes)
-        sub = f"<ol>{itens}</ol>" if itens and not titulo.startswith("Anexo") and i != 4 else ""
+        sub = f"<ol>{itens}</ol>" if itens and not titulo.startswith("Anexo") and arquivo != "docs/decisoes.md" else ""
         sumario.append(f'<li><a href="#cap-{i}">{html.escape(titulo)}</a>{sub}</li>')
 
     repo_html = f'<a href="{html.escape(repo)}">{html.escape(repo)}</a>' if repo else "—"
@@ -168,7 +176,8 @@ def montar_html(repo: str | None) -> str:
   <dl>
     <dt>Autora</dt><dd>Júlia Félix Giannandrea</dd>
     <dt>Repositório</dt><dd>{repo_html}</dd>
-    <dt>Gerado em</dt><dd>{date.today():%d/%m/%Y}, a partir do README e de docs/</dd>
+    <dt>Conteúdo</dt><dd>{html.escape(descricao)}</dd>
+    <dt>Gerado em</dt><dd>{date.today():%d/%m/%Y}</dd>
   </dl>
 </section>
 <section class="sumario"><h1>Sumário</h1><ol>{''.join(sumario)}</ol></section>
@@ -183,20 +192,22 @@ def main() -> None:
     args = parser.parse_args()
 
     pagina_html = RAIZ / "docs" / ".documentacao.html"
-    pagina_html.write_text(montar_html(args.repo or None), encoding="utf-8")
     try:
         with sync_playwright() as p:
             navegador = p.chromium.launch()
-            pagina = navegador.new_page()
-            pagina.goto(pagina_html.as_uri(), wait_until="networkidle")
-            pagina.pdf(path=str(SAIDA), format="A4", print_background=True,
-                       display_header_footer=True, header_template="<span></span>",
-                       footer_template=RODAPE,
-                       margin={"top": "18mm", "bottom": "20mm", "left": "18mm", "right": "18mm"})
+            for saida, (capitulos_md, descricao) in VERSOES.items():
+                pagina_html.write_text(montar_html(args.repo or None, capitulos_md, descricao), encoding="utf-8")
+                pagina = navegador.new_page()
+                pagina.goto(pagina_html.as_uri(), wait_until="networkidle")
+                pagina.pdf(path=str(RAIZ / saida), format="A4", print_background=True,
+                           display_header_footer=True, header_template="<span></span>",
+                           footer_template=RODAPE,
+                           margin={"top": "18mm", "bottom": "20mm", "left": "18mm", "right": "18mm"})
+                pagina.close()
+                print(f"PDF gerado em {saida}")
             navegador.close()
     finally:
         pagina_html.unlink(missing_ok=True)
-    print(f"PDF gerado em {SAIDA.relative_to(RAIZ)}")
 
 
 if __name__ == "__main__":

@@ -24,7 +24,7 @@ O agente responde às perguntas recorrentes que hoje sobrecarregam a equipe (pre
 | [`docs/uso-de-ia.md`](docs/uso-de-ia.md) | Como usei assistentes de IA, etapa por etapa |
 | [`docs/data_quality.md`](docs/data_quality.md) | Relatório de qualidade de dados, gerado pelo ETL |
 | [`kb/pendencias_gerencia.md`](kb/pendencias_gerencia.md) | Contradições e lacunas do manual, para a gerência da loja |
-| [`docs/documentacao.pdf`](docs/documentacao.pdf) | Este README e a documentação num único PDF |
+| [`docs/documentacao.pdf`](docs/documentacao.pdf) | **Documentação completa em PDF:** este README, a arquitetura, o processo, as decisões, o uso de IA e os anexos |
 
 ---
 
@@ -113,6 +113,16 @@ python -m etl.extrair_politicas
 ```
 
 Gera `kb/_fonte/manual_extraido.md`. As seções em `kb/politicas/` são curadas a partir desse texto e revisadas à mão.
+
+### 6. Gerar os PDFs (opcional)
+
+```bash
+pip install -r requirements-docs.txt
+playwright install chromium
+python docs/gerar_pdf.py
+```
+
+Gera `docs/readme.pdf`, só com este README, e `docs/documentacao.pdf`, com a documentação completa. Os dois saem sempre dos arquivos `.md`, para não divergirem do repositório.
 
 ### Problemas comuns
 
@@ -322,7 +332,7 @@ A revisão humana fez diferença em vários pontos. Na primeira curadoria, inter
 | Uso de assistentes de código | Seção acima e `docs/uso-de-ia.md` | Atendido |
 | Repositório público com histórico real de commits | Uma branch e um pull request por etapa, com merge commit, sem force-push | Atendido |
 | 3 a 5 conversas de exemplo, ao menos uma não trivial | 5 cenários em `exemplos/conversa.md`, entre eles a devolução do pedido 4 (identidade, dados do pedido e política juntos), e capturas da interface web nesta página | Atendido |
-| PDF do README e da documentação (Written Case) | `docs/documentacao.pdf`, gerado por `python docs/gerar_pdf.py` | Atendido |
+| PDF do README e da documentação (Written Case) | `docs/readme.pdf` (README, arquivo de envio) e `docs/documentacao.pdf` (documentação completa), gerados por `python docs/gerar_pdf.py` | Atendido |
 
 ---
 
