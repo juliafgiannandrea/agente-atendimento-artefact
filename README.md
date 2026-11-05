@@ -1,5 +1,7 @@
 # Agente de Atendimento — Empório da Música
 
+*English version: [README.en.md](README.en.md).*
+
 Protótipo de um agente de atendimento por mensagens de texto para a Empório da Música, loja fictícia de instrumentos musicais em Campo Grande/MS. Desenvolvido por Júlia Félix Giannandrea como desafio técnico para a vaga de AI Engineer na Artefact.
 
 O agente responde às perguntas recorrentes que hoje sobrecarregam a equipe (preço, disponibilidade, status de pedido, horários, trocas, pagamento), consultando os dados da loja e o manual de políticas, no tom da loja e sem inventar informação.
@@ -18,6 +20,7 @@ O agente responde às perguntas recorrentes que hoje sobrecarregam a equipe (pre
 | Documento | Conteúdo |
 |---|---|
 | Este README | Como rodar, decisões técnicas, limitações, uso de IA e checklist do desafio |
+| [`README.en.md`](README.en.md) | Este README em inglês |
 | [`docs/arquitetura.md`](docs/arquitetura.md) | Como o agente funciona por dentro, com diagramas |
 | [`docs/processo.md`](docs/processo.md) | O que foi feito em cada etapa, problemas encontrados e como foram resolvidos |
 | [`docs/decisoes.md`](docs/decisoes.md) | Registro de decisões (D01 a D23) e suposições (S01 a S07), com contexto e alternativas |
@@ -122,7 +125,7 @@ playwright install chromium
 python docs/gerar_pdf.py
 ```
 
-Gera `docs/readme.pdf`, só com este README, e `docs/documentacao.pdf`, com a documentação completa. Os dois saem sempre dos arquivos `.md`, para não divergirem do repositório.
+Gera `docs/Júlia Félix - AI Engineer – Full-Stack para Aplicações com IA Generativa.pdf`, com o README em inglês, e `docs/documentacao.pdf`, com a documentação completa em português. Os dois saem sempre dos arquivos `.md`, para não divergirem do repositório.
 
 ### Problemas comuns
 
@@ -332,7 +335,7 @@ A revisão humana fez diferença em vários pontos. Na primeira curadoria, inter
 | Uso de assistentes de código | Seção acima e `docs/uso-de-ia.md` | Atendido |
 | Repositório público com histórico real de commits | Uma branch e um pull request por etapa, com merge commit, sem force-push | Atendido |
 | 3 a 5 conversas de exemplo, ao menos uma não trivial | 5 cenários em `exemplos/conversa.md`, entre eles a devolução do pedido 4 (identidade, dados do pedido e política juntos), e capturas da interface web nesta página | Atendido |
-| PDF do README e da documentação (Written Case) | `docs/readme.pdf` (README, arquivo de envio) e `docs/documentacao.pdf` (documentação completa), gerados por `python docs/gerar_pdf.py` | Atendido |
+| PDF do README e da documentação (Written Case) | `docs/Júlia Félix - AI Engineer – Full-Stack para Aplicações com IA Generativa.pdf` (README em inglês, arquivo de envio) e `docs/documentacao.pdf` (documentação completa), gerados por `python docs/gerar_pdf.py` | Atendido |
 
 ---
 

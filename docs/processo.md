@@ -227,7 +227,7 @@ Os valores (preços, PIX, parcelas, prazos e atraso) saíram certos em todos os 
 - Esta documentação de processo e a de [arquitetura](arquitetura.md), com diagramas.
 - Revisão de consistência do registro de decisões: decisões que mudaram depois (como a interface, que começou só em CLI) ganharam uma nota de atualização, em vez de serem apagadas.
 - Teste do zero numa cópia limpa do repositório: ambiente virtual novo, seguindo o README à risca. O ETL gerou um relatório idêntico ao versionado e os testes passaram. O teste revelou que, sem o banco, o CLI e a interface iniciavam normalmente e só falhavam na primeira pergunta, com uma mensagem genérica. Agora os dois avisam já ao iniciar que é preciso rodar o ETL.
-- Geração de dois PDFs a partir dos `.md` (`docs/gerar_pdf.py`): o do README, que é o arquivo de envio, e este, com a documentação completa.
+- Geração de dois PDFs a partir dos `.md` (`docs/gerar_pdf.py`): o do README em inglês (`README.en.md`), que é o arquivo de envio, e este, com a documentação completa.
 
 ---
 

@@ -1,7 +1,9 @@
 """Gera os PDFs do projeto a partir do README e da documentação.
 
-- docs/readme.pdf: só o README. É o arquivo de envio do Written Case.
-- docs/documentacao.pdf: README, arquitetura, processo, decisões, uso de IA e anexos.
+- docs/Júlia Félix - AI Engineer – Full-Stack para Aplicações com IA Generativa.pdf:
+  o README em inglês (README.en.md). É o arquivo de envio do Written Case.
+- docs/documentacao.pdf: README, arquitetura, processo, decisões, uso de IA e anexos,
+  em português.
 
 Os PDFs são sempre gerados a partir dos .md, para nunca divergirem do que está no
 repositório.
@@ -41,10 +43,25 @@ CAPITULOS_COMPLETOS = [
     ("kb/soul.md", "Anexo C — Persona do agente"),
 ]
 
-# arquivo de saída -> (capítulos, descrição na capa)
+ARQUIVO_ENVIO = "docs/Júlia Félix - AI Engineer – Full-Stack para Aplicações com IA Generativa.pdf"
+
+# arquivo de saída -> (capítulos, descrição na capa, idioma)
 VERSOES = {
-    "docs/readme.pdf": ([("README.md", "README")], "README do projeto"),
-    "docs/documentacao.pdf": (CAPITULOS_COMPLETOS, "Documentação completa: README, arquitetura, processo, decisões e uso de IA"),
+    ARQUIVO_ENVIO: ([("README.en.md", "README")], "Project README", "en"),
+    "docs/documentacao.pdf": (CAPITULOS_COMPLETOS,
+                              "Documentação completa: README, arquitetura, processo, decisões e uso de IA", "pt"),
+}
+
+# Textos fixos da capa, do sumário e do rodapé em cada idioma
+TEXTOS = {
+    "pt": {"lang": "pt-BR", "titulo": "Agente de Atendimento<br>Empório da Música",
+           "sub": "Desafio técnico · AI Engineer · Artefact", "autora": "Autora", "repo": "Repositório",
+           "conteudo": "Conteúdo", "gerado": "Gerado em", "sumario": "Sumário",
+           "rodape": "Agente de Atendimento — Empório da Música · Júlia Félix Giannandrea", "data": "%d/%m/%Y"},
+    "en": {"lang": "en", "titulo": "Customer Service Agent<br>Empório da Música",
+           "sub": "Technical challenge · AI Engineer · Artefact", "autora": "Author", "repo": "Repository",
+           "conteudo": "Contents", "gerado": "Generated on", "sumario": "Contents",
+           "rodape": "Customer Service Agent — Empório da Música · Júlia Félix Giannandrea", "data": "%Y-%m-%d"},
 }
 
 CSS = """
@@ -93,7 +110,7 @@ hr { border: none; border-top: 0.75pt solid var(--linha); margin: 14pt 0; }
 RODAPE = """
 <div style="font-family: Arial, sans-serif; font-size: 7.5pt; color: #5A6178; width: 100%;
             padding: 0 18mm; display: flex; justify-content: space-between;">
-  <span>Agente de Atendimento — Empório da Música · Júlia Félix Giannandrea</span>
+  <span>{texto}</span>
   <span><span class="pageNumber"></span> / <span class="totalPages"></span></span>
 </div>
 """
@@ -141,7 +158,8 @@ def _corrige_links(corpo: str, origem: Path, ancoras: dict[Path, str], repo: str
     return re.sub(r'<a href="([^"]+)">(.*?)</a>', link, corpo, flags=re.S)
 
 
-def montar_html(repo: str | None, capitulos_md: list[tuple[str, str]], descricao: str) -> str:
+def montar_html(repo: str | None, capitulos_md: list[tuple[str, str]], descricao: str, idioma: str) -> str:
+    t = TEXTOS[idioma]
     md = MarkdownIt("commonmark", {"html": True}).enable("table")
     ancoras = {(RAIZ / arquivo).resolve(): f"cap-{i}" for i, (arquivo, _) in enumerate(capitulos_md, 1)}
 
@@ -171,18 +189,18 @@ def montar_html(repo: str | None, capitulos_md: list[tuple[str, str]], descricao
     capa = f"""
 <section class="capa">
   <div class="faixa"></div>
-  <h1>Agente de Atendimento<br>Empório da Música</h1>
-  <div class="sub">Desafio técnico · AI Engineer · Artefact</div>
+  <h1>{t["titulo"]}</h1>
+  <div class="sub">{t["sub"]}</div>
   <dl>
-    <dt>Autora</dt><dd>Júlia Félix Giannandrea</dd>
-    <dt>Repositório</dt><dd>{repo_html}</dd>
-    <dt>Conteúdo</dt><dd>{html.escape(descricao)}</dd>
-    <dt>Gerado em</dt><dd>{date.today():%d/%m/%Y}</dd>
+    <dt>{t["autora"]}</dt><dd>Júlia Félix Giannandrea</dd>
+    <dt>{t["repo"]}</dt><dd>{repo_html}</dd>
+    <dt>{t["conteudo"]}</dt><dd>{html.escape(descricao)}</dd>
+    <dt>{t["gerado"]}</dt><dd>{date.today().strftime(t["data"])}</dd>
   </dl>
 </section>
-<section class="sumario"><h1>Sumário</h1><ol>{''.join(sumario)}</ol></section>
+<section class="sumario"><h1>{t["sumario"]}</h1><ol>{''.join(sumario)}</ol></section>
 """
-    return (f'<!doctype html><html lang="pt-BR"><head><meta charset="utf-8">'
+    return (f'<!doctype html><html lang="{t["lang"]}"><head><meta charset="utf-8">'
             f"<style>{CSS}</style></head><body>{capa}{''.join(capitulos)}</body></html>")
 
 
@@ -195,13 +213,14 @@ def main() -> None:
     try:
         with sync_playwright() as p:
             navegador = p.chromium.launch()
-            for saida, (capitulos_md, descricao) in VERSOES.items():
-                pagina_html.write_text(montar_html(args.repo or None, capitulos_md, descricao), encoding="utf-8")
+            for saida, (capitulos_md, descricao, idioma) in VERSOES.items():
+                pagina_html.write_text(montar_html(args.repo or None, capitulos_md, descricao, idioma),
+                                       encoding="utf-8")
                 pagina = navegador.new_page()
                 pagina.goto(pagina_html.as_uri(), wait_until="networkidle")
                 pagina.pdf(path=str(RAIZ / saida), format="A4", print_background=True,
                            display_header_footer=True, header_template="<span></span>",
-                           footer_template=RODAPE,
+                           footer_template=RODAPE.format(texto=TEXTOS[idioma]["rodape"]),
                            margin={"top": "18mm", "bottom": "20mm", "left": "18mm", "right": "18mm"})
                 pagina.close()
                 print(f"PDF gerado em {saida}")
