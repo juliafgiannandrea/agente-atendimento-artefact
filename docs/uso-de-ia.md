@@ -72,7 +72,10 @@ O enunciado pede que eu explique quais assistentes de IA usei e como. Este arqui
 
 ### Etapa 6 — Avaliação
 
-*(a preencher)*
+- Fiz as conversas com o agente no CLI e na interface. O Claude sugeriu os cenários e as mensagens exatas, tiradas do conjunto de teste, para que as respostas pudessem ser conferidas contra os valores esperados.
+- O Claude leu as conversas exportadas e as capturas e comparou cada resposta com o caso esperado e com o resultado das ferramentas. Ele separou o que funcionou dos desvios e, para cada desvio, apontou se a origem era o modelo ou a solução.
+- Pedi que a documentação deixasse claro que parte dos erros vem do modelo usado. O Claude conferiu as características do modelo na página oficial (pesos abertos, *mixture-of-experts*, português fora das línguas suportadas) em vez de supor, e sugeriu manter separados os desvios que são da solução, para o argumento não soar como desculpa.
+- O limite de 50 requisições por dia impediu a rodada completa das 36 perguntas e a comparação entre modelos. Isso ficou registrado como limitação e como o primeiro item do que eu faria com mais tempo.
 
 ### Etapa 7 — Fechamento
 

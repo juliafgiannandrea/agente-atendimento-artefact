@@ -14,7 +14,7 @@ Antes de escrever código, montei um plano em etapas, cada uma com uma entrega q
 | 3. Base de conhecimento | Manual em seções revisadas, persona, índice e pendências para a gerência | Concluída |
 | 4. Agente e ferramentas | Agente Strands com 9 ferramentas, guardrails e CLI | Concluída |
 | 5. Interface | Interface web em Streamlit, com cartões e plano em tempo real | Concluída |
-| 6. Avaliação | Rodar as perguntas de teste, ajustar e repetir; gerar as conversas de exemplo | Em andamento |
+| 6. Avaliação | Conversas reais com o agente no CLI e na interface, conferidas contra as respostas esperadas; conversa de exemplo e capturas | Concluída |
 | 7. Fechamento | README, documentação, checklist do desafio, teste num clone limpo e este PDF | Concluída |
 | 8. Deploy | Publicação no Streamlit Community Cloud | Planejada |
 
@@ -165,16 +165,55 @@ Cada etapa foi desenvolvida numa branch própria (como `feat/etl`, `feat/kb`, `f
 
 **Objetivo:** medir a qualidade das respostas com o conjunto de perguntas de teste, ajustar e repetir.
 
-**Como será feita:**
+**Plano inicial:** rodar as 36 perguntas, conferir por regra a fonte usada e os fatos obrigatórios, corrigir e repetir.
 
-1. Rodar as 36 perguntas (inclusive as conversas de vários turnos) e salvar, para cada uma, a resposta, as ferramentas chamadas e o tempo.
-2. Conferir automaticamente o que dá para conferir por regra: se a fonte usada é a esperada e se os fatos obrigatórios aparecem.
-3. Revisar as falhas, ajustar prompt, ferramentas ou base de conhecimento e rodar de novo.
-4. Gerar as conversas de exemplo a partir das melhores execuções.
+**Restrição que mudou o plano:** cada pergunta gasta de 3 a 5 chamadas ao modelo, uma por passo do agente. Uma rodada completa passaria de 100 requisições, acima do limite de 50 por dia dos modelos gratuitos do OpenRouter. Em vez da rodada automatizada, a avaliação foi feita com uma amostra que cabia no limite.
 
-**Restrição:** cada pergunta gasta de 3 a 5 chamadas ao modelo (uma por passo do agente). Uma rodada completa passa de 100 requisições, acima do limite diário de 50 dos modelos gratuitos do OpenRouter sem créditos. A avaliação vai usar a cota renovada ou a API da Anthropic.
+**Como foi feita:**
 
-**Resultados:** *(a preencher ao final da etapa 6)*
+1. **Conversas no CLI:** 5 cenários, escolhidos para cobrir os tipos de pergunta do enunciado. As mensagens foram digitadas exatamente como no conjunto de teste, para comparar as respostas com os valores esperados. Os 5 ficaram numa única sessão, exportada em [`exemplos/conversa.md`](../exemplos/conversa.md).
+2. **Conversas na interface web:** 2 perguntas para mostrar os cartões, um pedido atrasado com reclamação e um produto em promoção. As capturas estão no README.
+3. **Conferência:** cada resposta foi comparada com o caso correspondente em `tests/eval_set/perguntas.yaml` (fatos obrigatórios e o que invalida a resposta) e com o que as ferramentas devolveram.
+
+Modelo usado: `nvidia/nemotron-3.5-lightning:free`, no OpenRouter. É um modelo de pesos abertos da NVIDIA, do tipo *mixture-of-experts* (30 bilhões de parâmetros, 3 bilhões ativos por token). O português não está entre as línguas que ele suporta oficialmente.
+
+**O que funcionou:**
+
+| Cenário | Resultado |
+|---|---|
+| Violões até R$ 1.000 | As 12 opções certas, sem o produto sem estoque nem o descontinuado |
+| Devolução do pedido 4 | Pediu nome e telefone antes de consultar; com a identidade confirmada, aplicou a regra dos 7 dias com as datas calculadas pela ferramenta e indicou os canais da equipe |
+| Produto sem estoque | Informou a indisponibilidade, o preço e o PIX certos e as 3 alternativas que a ferramenta trouxe |
+| Fora do escopo e prompt injection | Recusou o restaurante com leveza; recusou listar clientes sem chamar nenhuma ferramenta |
+| Endereço e horário | Endereço completo; pelo relógio real do fuso da loja, informou que estava fechada e quando reabre |
+| Pedido atrasado com reclamação (web) | Verificou a identidade, reconheceu os 25 dias de atraso e registrou a reclamação com protocolo |
+| Produto em promoção (web) | Preço com 18% de desconto, PIX sem desconto adicional e 12 parcelas, como a ferramenta calculou |
+
+Os valores (preços, PIX, parcelas, prazos e atraso) saíram certos em todos os cenários, porque vêm calculados das ferramentas. Os guardrails de identidade e de privacidade também se comportaram como esperado.
+
+**Desvios encontrados:**
+
+| Desvio | Exemplo | Origem |
+|---|---|---|
+| Ignorar avisos das ferramentas | Tratou a previsão de entrega como data de entrega ("foi entregue em 22/12/2025"), apesar do aviso explícito no resultado da ferramenta | Modelo |
+| Não usar o planejamento | Não chamou `planejar` nem na pergunta da reclamação, que junta pedido, política e registro; por isso o checklist não apareceu na interface | Modelo |
+| Oferecer ações e ajuda extra | "Se quiser fechar a compra, é só me dizer qual forma de pagamento prefere"; "ou quer ver opções acima de R$ 1.000?" | Modelo: o prompt proíbe explicitamente (D22, D23) |
+| Repetir os dados do cartão | Na interface, o texto repetiu quase tudo que o cartão do produto já mostrava | Modelo: o prompt pede para destacar só o que responde à pergunta |
+| Erros de português | Palavra inexistente ("boawill"), concordância ("cordo de aço"), "Ele foi enviado em 15/02" para a data do pedido | Modelo |
+| Faltou a garantia do fabricante | Na devolução, não citou a garantia do fabricante como alternativa, que é a resposta esperada para esse caso | Modelo e solução: a informação está na política de garantia, que o agente não consultou, e a ferramenta do pedido poderia indicá-la |
+| Especificações mal traduzidas | "Pescoço Nato" (é braço) | Solução: a ferramenta entrega as chaves das especificações em inglês |
+
+**Conclusões:**
+
+- **O que está em código funcionou.** Valores, prazos, verificação de identidade, recusa a listar clientes e cartões da interface saíram certos com um modelo pequeno e gratuito. Era esse o objetivo de não depender do modelo para o que é crítico.
+- **O que depende do modelo oscilou.** A redação, o tom e o cumprimento de regras do prompt variaram. Esses desvios devem diminuir com um modelo maior ou com melhor suporte ao português, mas não foi possível medir isso dentro do limite de requisições gratuitas (ver "Com mais tempo, eu faria", no README).
+
+**Próximos passos identificados:**
+
+1. Traduzir as chaves das especificações na ferramenta de produto, uma correção no código com resultado sempre igual.
+2. Fazer a consulta do pedido indicar a garantia do fabricante quando a garantia legal já venceu.
+3. Acrescentar ao prompt exemplos explícitos de fechamentos proibidos.
+4. Rodar o conjunto completo de 36 perguntas com mais de um modelo, incluindo o Claude, e comparar os resultados.
 
 ---
 
