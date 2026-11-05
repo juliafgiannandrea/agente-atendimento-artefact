@@ -1,0 +1,20 @@
+%%{init: {"theme": "base", "themeVariables": {"fontFamily": "DejaVu Sans, Arial, sans-serif", "fontSize": "14px", "primaryColor": "#FFFFFF", "primaryBorderColor": "#0D1634", "primaryTextColor": "#0D1634", "lineColor": "#5A6178", "actorBkg": "#FFFFFF", "actorBorder": "#0D1634", "noteBkgColor": "#F5F6FA", "noteBorderColor": "#C9CCD8"}}}%%
+sequenceDiagram
+    autonumber
+    actor C as Cliente
+    participant M as Modelo
+    participant T as Tools
+    participant F as Banco e kb/
+
+    C->>M: "Sou Lucas Mendes da Silva, (67) 99812-3456.<br/>Me arrependi, posso devolver o pedido 4?"
+    M->>T: planejar(objetivo, passos, informações faltantes)
+    T-->>M: plano registrado (aparece como checklist na UI)
+    M->>T: consultar_pedido(nome, telefone, pedido 4)
+    T->>F: confere a identidade e lê vw_pedidos
+    F-->>T: pedido entregue, previsão 22/12/2025
+    Note over T: regras.py calcula os prazos<br/>na data de referência (25/03/2026)
+    T-->>M: pedido + prazos (arrependimento até 29/12/2025, encerrado)
+    M->>T: ler_politica(trocas-e-devolucoes)
+    T->>F: lê kb/politicas/04 (sem notas de curadoria)
+    T-->>M: regra dos 7 dias e da troca por defeito
+    M-->>C: o prazo terminou, explica a garantia<br/>e os canais da equipe
