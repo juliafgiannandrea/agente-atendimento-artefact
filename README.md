@@ -149,7 +149,7 @@ A abordagem é **híbrida**:
 
 ### Modelo e provedor: configuráveis, Anthropic ou OpenRouter (D02)
 
-`PROVIDER` e `MODEL_ID` no `.env` escolhem o modelo, e só a função `build_model()` conhece o provedor. Os modelos gratuitos do OpenRouter deixam qualquer pessoa rodar o projeto sem custo, mas variam no suporte a ferramentas e têm limite diário. O Claude (Anthropic) é mais confiável para escolher ferramentas, seguir a persona e respeitar guardrails, e é o recomendado para as conversas finais. A temperatura é baixa (0,2), porque atendimento pede consistência, não criatividade.
+`PROVIDER` e `MODEL_ID` no `.env` escolhem o modelo, e só a função `build_model()` conhece o provedor. Os modelos gratuitos do OpenRouter deixam qualquer pessoa rodar o projeto sem custo, mas variam no suporte a ferramentas e têm limite diário. O Claude (Anthropic) é mais confiável para escolher ferramentas, seguir a persona e respeitar guardrails, e é o recomendado para as conversas finais. O desenvolvimento e os testes foram feitos com o `nvidia/nemotron-3.5-lightning:free`, gratuito no OpenRouter (ver Limitações). A temperatura é baixa (0,2), porque atendimento pede consistência, não criatividade.
 
 ### Arquitetura de retrieval: duas fontes, sem banco vetorial (D15, D16)
 
@@ -210,7 +210,7 @@ As contradições e lacunas do manual foram reunidas em [`kb/pendencias_gerencia
 
 ## Exemplos de conversa
 
-*As conversas de exemplo serão geradas na etapa 6 (avaliação) e ficarão em [`exemplos/`](exemplos/).* Cenários planejados:
+*As conversas de exemplo em texto ficam em [`exemplos/`](exemplos/), geradas na etapa 6 (avaliação).* Cenários:
 
 | Cenário | Por que é relevante |
 |---|---|
@@ -220,12 +220,32 @@ As contradições e lacunas do manual foram reunidas em [`kb/pendencias_gerencia
 | Pergunta fora do escopo e tentativa de prompt injection | Recusa com leveza e proteção dos dados de clientes |
 | Endereço, horário e "estão abertos agora?" | Política e relógio real do fuso da loja |
 
+### Na interface web
+
+**Progresso em tempo real.** Enquanto o agente trabalha, a resposta mostra a etapa atual. Em perguntas com várias fontes, o plano aparece como um checklist que vai sendo marcado.
+
+![Interface web: agente trabalhando na resposta](docs/img/ui-progresso.png)
+
+**Pedido atrasado com reclamação.** O agente confere a identidade, consulta o pedido e registra a reclamação. O cartão do pedido mostra o atraso calculado na data de referência, e o cartão de protocolo traz o número da reclamação e o prazo de retorno.
+
+![Interface web: cartão do pedido atrasado e protocolo da reclamação](docs/img/ui-pedido-reclamacao.png)
+
+**Produto em promoção.** O cartão do produto mostra o preço original, o desconto, o PIX (que não se soma à promoção) e o parcelamento máximo dentro das faixas da seção 3.1 do manual. Todos os valores vêm calculados pela ferramenta, não pelo modelo.
+
+![Interface web: cartão de produto com promoção, PIX e parcelamento](docs/img/ui-produto-promocao.png)
+
 ---
 
 ## Limitações conhecidas
 
 - **Data simulada.** Os prazos de pedido usam 25/03/2026 (S01). Com dados atuais, basta mudar `REFERENCE_DATE`.
-- **Qualidade depende do modelo.** Modelos gratuitos variam muito na escolha de ferramentas e no respeito à persona, e têm limite diário de requisições. Os valores e as regras críticas estão protegidos em código, mas a redação da resposta é do modelo.
+- **Qualidade depende do modelo, e testei a fundo só um.** Desenvolvi e testei com o `nvidia/nemotron-3.5-lightning:free`, gratuito no OpenRouter. É um modelo de pesos abertos da NVIDIA, do tipo *mixture-of-experts* (30 bilhões de parâmetros, 3 bilhões ativos por token), e o português não está entre as línguas que ele suporta oficialmente (inglês, espanhol, francês, alemão, italiano e japonês). Vários desvios observados nos testes vêm do modelo, e não das regras da solução:
+  - ignorar avisos que as ferramentas devolvem (por exemplo, tratar a previsão de entrega como data de entrega, apesar do aviso explícito no resultado);
+  - não chamar a ferramenta de planejamento em perguntas com várias fontes, como o prompt pede;
+  - oferecer ações que o prompt proíbe ("se quiser fechar a compra, é só me dizer...") e perguntas de refinamento;
+  - erros de português, como palavras inexistentes ("boawill") e concordância ("cordo de aço").
+
+  O que é crítico não depende do modelo: valores, prazos, verificação de identidade e restrições de SQL são garantidos em código, e os cartões da interface mostram os dados de origem. A redação da resposta, porém, é do modelo. Parte dos desvios também pode ser reduzida na solução, e as correções estão na avaliação (etapa 6 de [`docs/processo.md`](docs/processo.md)).
 - **Sem avaliador de saída.** Nenhuma etapa confere o texto final contra os resultados das ferramentas antes de enviá-lo. Os cartões da interface mitigam isso, mostrando os dados de origem.
 - **Verificação de identidade simples.** Nome e telefone ou e-mail não são segredos. Num sistema real, o pedido seria consultado num canal autenticado ou com um código enviado ao cliente.
 - **Sem passagem real para a equipe.** As reclamações ficam num SQLite local, sem notificação para ninguém. Quando algo depende da equipe, o agente indica os canais, mas não transfere a conversa.
@@ -240,13 +260,13 @@ As contradições e lacunas do manual foram reunidas em [`kb/pendencias_gerencia
 
 **Qualidade das respostas**
 - Um **avaliador de saída** que confira valores, datas e afirmações do texto contra os resultados das ferramentas antes de enviar.
-- **Avaliação automatizada contínua:** rodar o conjunto de perguntas a cada mudança de prompt ou ferramenta, com um modelo como avaliador para os critérios qualitativos e comparação entre modelos.
+- **Observabilidade e avaliação para comparar modelos.** Traces de cada conversa (o Strands exporta OpenTelemetry: ferramentas chamadas, tempo, tokens e custo) e uma rodada automatizada das 36 perguntas de teste a cada mudança de prompt, ferramenta ou modelo, com regras para o que é verificável e um modelo avaliador para os critérios qualitativos. Assim daria para testar vários modelos no mesmo conjunto, ver como cada um se comporta (escolha de ferramentas, respeito à persona, português) e escolher com dados. Não consegui fazer essa comparação porque usei modelos e requisições gratuitas do OpenRouter, limitadas a 50 por dia: cada pergunta gasta de 3 a 5 chamadas ao modelo, então uma única rodada completa já passa de 100 requisições e o limite estoura rápido. Por isso testei a fundo só o Nemotron 3.5 Lightning, que não é otimizado para português. É de esperar que parte dos desvios descritos nas limitações diminua com modelos maiores ou com melhor suporte ao português, e é exatamente isso que essa avaliação comparativa mediria.
 
 **Experiência do cliente**
 - **Memória persistida entre sessões:** o cliente voltar outro dia, ou por outro canal, e o agente lembrar da conversa e do que já foi informado (pedido em andamento, produto de interesse, reclamação aberta). Hoje a memória vale só durante a conversa; no CLI, `--sessao` grava em disco local. Em produção, as sessões ficariam num armazenamento gerenciado (o Strands já tem um gerenciador de sessões para S3), ligadas a um cliente autenticado, com retenção e exclusão conforme a LGPD e os dados pessoais separados do catálogo.
 
 **Operação**
-- **Observabilidade:** traces das chamadas (o Strands exporta OpenTelemetry), custo e latência por resposta e taxa de uso de cada ferramenta.
+- **Monitoramento em produção:** custo e latência por resposta, taxa de uso de cada ferramenta e alertas de falha do provedor.
 - **Passagem real para a equipe:** integração com a API do WhatsApp Business e uma fila de atendimento humano, com as reclamações notificadas ao responsável.
 - **Deploy de produção:** container com Docker em ECS/Fargate ou Lambda, chaves num gerenciador de segredos e o modelo via Amazon Bedrock.
 - **Cache de prompt** (o prompt de sistema é fixo) para reduzir custo e latência.
