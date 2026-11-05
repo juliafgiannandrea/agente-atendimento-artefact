@@ -52,8 +52,9 @@ casos:
       Testa filtro combinado (categoria + preço + status + estoque).
       Nuance: o Giannini GNF-3 CEQ (R$ 1.049) fica abaixo de R$ 1.000 no PIX
       (R$ 996,55). Bônus se o agente mencionar, mas não é obrigatório.
-      Com 12 itens, vale observar se o agente agrupa (nylon/aço) ou pergunta
-      a preferência em vez de despejar a lista.
+      Com 12 itens, vale observar se o agente agrupa (nylon/aço) em vez de
+      despejar a lista. Não deve perguntar a preferência antes de responder,
+      porque a pergunta já tem resposta (D23).
 
   - id: enun-02
     categoria: info_loja
