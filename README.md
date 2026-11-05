@@ -84,7 +84,7 @@ Abre o chat no navegador (por padrão em `http://localhost:8501`). Rode o comand
 
 Acima do texto do atendente aparecem cartões montados a partir dos dados consultados (produto, lista de produtos, pedido com prazos, horário, protocolo de reclamação). Em perguntas com várias etapas, o plano do agente aparece como um checklist que vai sendo marcado em tempo real. A barra lateral tem perguntas de exemplo e o botão "Nova conversa". Os textos das políticas não são exibidos, porque o manual é material interno da loja.
 
-O desenho da interface foi validado num [protótipo visual](https://claude.ai/artifact/F9K2UnbBHQe9ksfwDXV8mh) antes da implementação.
+O desenho da interface foi validado num [protótipo visual](https://claude.ai/artifact/F9K2UnbBHQe9ksfwDXV8mh) antes da implementação. O protótipo mostra o desenho inicial: na versão final, os cartões vieram para antes do texto e o trecho da política consultada saiu da tela (D21 e D23).
 
 ### 3. Conversar pelo terminal
 
