@@ -6,7 +6,7 @@ paginas: [4, 5]
 publico: cliente
 quando_consultar: "Use quando o cliente perguntar sobre frete, frete grátis, prazo de entrega, envio para outras cidades, transportadoras, código de rastreamento ou produto que chegou danificado."
 versao_manual: "2.1 (junho de 2025)"
-revisao_humana: pendente
+revisao_humana: aprovada
 ---
 
 # Frete e entregas

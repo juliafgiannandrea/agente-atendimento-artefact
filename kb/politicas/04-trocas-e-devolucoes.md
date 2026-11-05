@@ -6,7 +6,7 @@ paginas: [4]
 publico: cliente
 quando_consultar: "Use quando o cliente quiser devolver ou trocar um produto, pedir reembolso, se arrepender da compra, relatar defeito, ou perguntar prazos e itens que não podem ser trocados."
 versao_manual: "2.1 (junho de 2025)"
-revisao_humana: pendente
+revisao_humana: aprovada
 ---
 
 # Trocas e devoluções

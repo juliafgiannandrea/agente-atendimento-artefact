@@ -6,7 +6,7 @@ paginas: [7, 8]
 publico: cliente
 quando_consultar: "Use quando o cliente perguntar como seus dados são usados, pedir para excluir seus dados ou parar de receber promoções, ou questionar por que precisa se identificar."
 versao_manual: "2.1 (junho de 2025)"
-revisao_humana: pendente
+revisao_humana: aprovada
 ---
 
 # Privacidade e proteção de dados
