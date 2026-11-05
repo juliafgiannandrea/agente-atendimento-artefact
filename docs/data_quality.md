@@ -121,7 +121,7 @@ o valor original é mantido, e a flag e o tratamento adotado ficam registrados a
 
 ### A10 — Pedido enviado com previsão de entrega vencida na data de referência
 
-**Tratamento:** O agente reconhece o atraso e encaminha à equipe (retorno em até 24 horas úteis).
+**Tratamento:** O agente reconhece o atraso e orienta o cliente a falar com a equipe ou a registrar uma reclamação (retorno em até 24 horas úteis).
 
 | order_id | estimated_delivery | dias_atraso |
 |---|---|---|

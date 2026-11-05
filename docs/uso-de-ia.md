@@ -34,7 +34,7 @@ O enunciado pede que eu explique quais assistentes de IA usei e como. Este arqui
 ### Etapa 1 — Conjunto de perguntas de teste
 
 - Defini as categorias que o conjunto precisava cobrir: as 4 perguntas do enunciado, estoque e status, promoções, parcelamento, verificação de identidade, acessórios, fora do escopo e prompt injection.
-- O Claude escreveu 34 casos em `tests/eval_set/perguntas.yaml`, com as respostas esperadas calculadas a partir dos CSVs (preços, promoções ativas, parcelas e titulares dos pedidos), e apontou as suposições que alguns casos exigem (S01 a S05 em `docs/decisoes.md`).
+- O Claude escreveu os casos de `tests/eval_set/perguntas.yaml` (34 na primeira versão, 36 hoje), com as respostas esperadas calculadas a partir dos CSVs (preços, promoções ativas, parcelas e titulares dos pedidos), e apontou as suposições que alguns casos exigem (S01 a S05 em `docs/decisoes.md`).
 - Decidi as suposições em aberto: data de referência simulada (S01), regra de parcelamento (S02) e contatos (S03).
 
 ### Etapa 2 — ETL
@@ -58,9 +58,34 @@ O enunciado pede que eu explique quais assistentes de IA usei e como. Este arqui
 - Testei o agente com modelos gratuitos do OpenRouter. O primeiro modelo foi recusado pelo provedor (só funciona em apps cadastrados) e o segundo deu limite de requisições, com o terminal parado por mais de um minuto. Com o Claude, analisei os erros e decidi: limitar as novas tentativas, classificar as falhas do provedor com mensagens claras, testar a conexão ao iniciar, esconder os logs internos fora do `--debug` e proibir Markdown nas respostas, que vinham com negrito.
 - Perguntei se o agente fazia um planejamento antes de responder. Ele não fazia (loop ReAct puro). Avaliei as opções que o Claude levantou e escolhi uma tool `planejar`, usada só em perguntas com mais de uma fonte, com um campo de informações faltantes para o agente perguntar em vez de supor (D20).
 
-### Etapa 5 — Interface (design)
+### Etapa 5 — Interface
 
 - Antes de implementar a UI em Streamlit, usei a skill de system design do Claude para documentar requisitos, arquitetura, trade-offs e as opções de renderização. Escolhi renderizar cartões a partir dos resultados das tools, e não a partir do texto do modelo.
 - Gerei com o Claude um protótipo visual (tela do chat, cartões por tool e diagrama de arquitetura) para validar o desenho antes de escrever o código.
 - Ajustei o protótipo: detalhes técnicos invisíveis, sem cartão de conexão e de exportação, perguntas de exemplo na sidebar, plano como checklist que se completa em tempo real e cores da identidade visual da Artefact. O Claude levantou as cores e a fonte direto do site da Artefact e ajustou o magenta para passar no contraste mínimo de acessibilidade.
 - Aprovei o protótipo e o Claude implementou a UI em Streamlit: extração das chamadas de tools, hooks de progresso, cartões e página. Os testes usam o `AppTest` do Streamlit com o modelo roteirizado, sem API e sem navegador. Ele também rodou a UI com um modelo roteirizado e conferiu as telas por captura antes de entregar, o que revelou que a fonte da marca não estava sendo aplicada (corrigido).
+- Testando a interface, encontrei problemas que levei ao Claude, e decidimos juntos como resolver:
+  - **resposta anterior aparecendo duplicada** ao enviar uma nova mensagem: ele reproduziu o problema num servidor de demonstração com um modelo roteirizado lento, achou a causa (a estrutura da página mudava entre execuções) e confirmou a correção por captura de tela;
+  - **valores em reais com a formatação quebrada:** ele identificou que o Streamlit lia o texto entre dois cifrões como fórmula e mostrou o antes e o depois;
+  - **agente oferecendo ações e fazendo perguntas desnecessárias** ("quer que eu reserve?", "posso te avisar quando chegar"): a decisão de que o agente só responde foi minha (D22 e D23). O Claude conferiu no manual o que precisava continuar (alternativas para produto sem estoque e o fechamento) e me apresentou essa diferença para eu decidir;
+  - **política interna visível ao cliente:** decidi retirar os textos das políticas da tela.
+
+### Etapa 6 — Avaliação
+
+*(a preencher)*
+
+### Etapa 7 — Fechamento
+
+- Pedi uma documentação que explicasse o que foi feito em cada etapa, porque o PDF do README e da documentação faz parte da avaliação.
+- O Claude reescreveu o README, criou os documentos de processo e de arquitetura (com diagramas), revisou o registro de decisões, montou o checklist do desafio e escreveu o script que gera o PDF. Revisei tudo antes de commitar.
+- Ele também testou o projeto do zero numa cópia limpa, seguindo o README, para conferir se as instruções bastam para outra pessoa rodar.
+
+## Onde a revisão humana fez diferença
+
+O Claude acelerou muito o trabalho, mas a revisão não foi formalidade. Alguns exemplos:
+
+- **Interpretação disfarçada de regra:** na primeira curadoria das políticas, interpretações entraram no texto como se fossem do manual. Pedi uma revisão linha a linha contra o PDF, e elas foram separadas e identificadas (etapa 3).
+- **Falso positivo no relatório de qualidade:** ao ler o primeiro relatório, vimos que a verificação A03 marcava como problema uma venda normal (etapa 2).
+- **Comportamento do agente:** os ajustes de tom (não oferecer ações, não fazer perguntas de refinamento, não mostrar políticas internas) vieram de eu usar o agente como cliente e não gostar do que vi (etapa 5).
+- **Expectativa errada num teste:** quando um teste falhou, conferimos os dados antes de mexer no código. O erro estava no teste, e o código ficou como estava (etapa 4).
+

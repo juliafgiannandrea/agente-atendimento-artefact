@@ -6,7 +6,7 @@ paginas: [6, 7, 8]
 publico: interno
 quando_consultar: "Use quando precisar saber como agir com produto sem estoque, descontinuado ou em breve, promoção vencida, reclamação, ou quando houver dúvida sobre como aplicar uma política."
 versao_manual: "2.1 (junho de 2025)"
-revisao_humana: pendente
+revisao_humana: aprovada
 ---
 
 # Procedimentos de atendimento

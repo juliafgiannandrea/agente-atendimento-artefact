@@ -157,3 +157,11 @@ def test_verificar_conexao_com_falha():
 
 def test_prompt_pede_texto_sem_markdown(ctx):
     assert "Não use Markdown" in montar_prompt(ctx)
+
+
+def test_contexto_padrao_exige_o_banco(monkeypatch, tmp_path):
+    # Sem o banco, CLI e interface avisam ao iniciar, e não só na primeira pergunta.
+    from agente.contexto import Contexto
+    monkeypatch.setenv("DB_PATH", str(tmp_path / "nao_existe.db"))
+    with pytest.raises(FileNotFoundError, match="python -m etl.pipeline"):
+        Contexto.padrao()

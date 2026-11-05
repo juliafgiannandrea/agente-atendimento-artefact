@@ -1,0 +1,39 @@
+%%{init: {"theme": "base", "flowchart": {"curve": "basis", "nodeSpacing": 30, "rankSpacing": 45}, "themeVariables": {"fontFamily": "DejaVu Sans, Arial, sans-serif", "fontSize": "14px", "primaryColor": "#FFFFFF", "primaryBorderColor": "#0D1634", "primaryTextColor": "#0D1634", "lineColor": "#5A6178", "clusterBkg": "#F5F6FA", "clusterBorder": "#C9CCD8"}}}%%
+flowchart LR
+    subgraph ENTRADA["1. Materiais da loja"]
+        CSV["6 CSVs<br/>produtos, promoções,<br/>clientes, pedidos"]
+        PDF["Manual de<br/>políticas (PDF)"]
+    end
+
+    subgraph PREP["2. Preparação"]
+        ETL["ETL<br/>bronze → silver → gold<br/>+ qualidade de dados"]
+        CUR["Extração do PDF<br/>+ curadoria revisada"]
+    end
+
+    subgraph FONTES["3. Fontes"]
+        DB[("emporio.db<br/>SQLite")]
+        KB["kb/<br/>políticas, persona,<br/>esquema do banco"]
+    end
+
+    subgraph AGENTE["4. Agente (Strands, ReAct)"]
+        TOOLS["9 tools<br/>planejar · catálogo · pedido<br/>política · horário · reclamação<br/>esquema + SQL só leitura"]
+        REG["regras.py<br/>preços, PIX,<br/>parcelas, prazos"]
+        LLM["Modelo<br/>Anthropic ou<br/>OpenRouter"]
+    end
+
+    subgraph CANAIS["5. Canais"]
+        CLI["CLI"]
+        UI["Web<br/>(Streamlit)"]
+    end
+
+    CSV --> ETL --> DB
+    PDF --> CUR --> KB
+    DB --> TOOLS
+    KB --> TOOLS
+    REG --- TOOLS
+    TOOLS <--> LLM
+    LLM <--> CLI
+    LLM <--> UI
+
+    classDef destaque fill:#0D1634,stroke:#0D1634,color:#FFFFFF
+    class LLM destaque

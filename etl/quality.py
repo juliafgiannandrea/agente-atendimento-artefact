@@ -334,7 +334,7 @@ def verifica_alertas(conn: sqlite3.Connection, reference_date: date) -> list[Res
         Resultado(
             "A10", "alerta", "orders",
             "Pedido enviado com previsão de entrega vencida na data de referência",
-            "O agente reconhece o atraso e encaminha à equipe (retorno em até 24 horas úteis).",
+            "O agente reconhece o atraso e orienta o cliente a falar com a equipe ou a registrar uma reclamação (retorno em até 24 horas úteis).",
             _consulta(conn, """
                 SELECT order_id, estimated_delivery,
                        CAST(julianday(?) - julianday(estimated_delivery) AS INTEGER) AS dias_atraso
@@ -372,7 +372,7 @@ def verifica_alertas(conn: sqlite3.Connection, reference_date: date) -> list[Res
         Resultado(
             "A15", "alerta", "orders",
             "Pedido cancelado sem motivo registrado",
-            "O agente informa o cancelamento e encaminha à equipe para detalhes.",
+            "O agente informa o cancelamento e orienta o cliente a falar com a equipe para detalhes.",
             _consulta(conn, "SELECT order_id FROM orders WHERE status = 'cancelled' "
                             "AND notes IS NULL ORDER BY order_id"),
         ),

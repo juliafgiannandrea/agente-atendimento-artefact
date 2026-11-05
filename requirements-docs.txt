@@ -1,0 +1,2 @@
+markdown-it-py>=3
+playwright>=1.40
