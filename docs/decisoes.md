@@ -188,7 +188,7 @@ Cada decisão traz o contexto, a escolha e o motivo. Este arquivo alimenta a se�
 - **Contexto:** num teste, o agente fechou a resposta sobre o Takamine GD20 com "Quer que eu reserve?". O desafio pede um agente que **responda** às perguntas dos clientes, e o agente não tem como reservar, vender ou alterar nada.
 - **Decisão (minha):** o agente não executa nem oferece ações: reservar ou separar produtos, fechar compras, gerar links de pagamento, cancelar ou alterar pedidos, aprovar trocas ou devoluções, agendar. Quando o cliente quer algo assim, ele explica a política e indica os canais da equipe (WhatsApp, telefone, e-mail ou a loja). O fechamento pergunta se há mais alguma dúvida, sem oferecer ações.
 - **Exceção:** `registrar_reclamacao` foi mantida. O manual (seção 7.3) pede que a reclamação seja registrada e encaminhada ao responsável, com retorno em 24 horas úteis.
-- **Onde está:** regra no prompt (`src/agente/prompt.py`), princípio na persona (`kb/soul.md`) e as orientações da base de políticas, que passaram de "encaminhe à equipe" para "oriente o cliente a falar com a equipe". As seções alteradas voltaram para `revisao_humana: pendente`.
+- **Onde está:** regra no prompt (`src/agente/prompt.py`), princípio na persona (`kb/soul.md`) e as orientações da base de políticas, que passaram de "encaminhe à equipe" para "oriente o cliente a falar com a equipe". As seções alteradas voltaram para `revisao_humana: pendente` e foram aprovadas de novo depois da minha revisão.
 
 ## D23 — O agente só responde: sem ajuda extra nem perguntas de refinamento; a UI não mostra as políticas
 
