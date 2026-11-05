@@ -41,14 +41,21 @@ class Contexto:
 
     @classmethod
     def padrao(cls) -> "Contexto":
-        return cls(db_path=get_db_path(), reference_date=get_reference_date())
+        """Contexto lido do .env. Falha já ao iniciar se o banco não existir, em vez de
+        só na primeira pergunta do cliente, com uma mensagem genérica."""
+        ctx = cls(db_path=get_db_path(), reference_date=get_reference_date())
+        ctx.exigir_banco()
+        return ctx
+
+    def exigir_banco(self) -> None:
+        if not self.db_path.exists():
+            raise FileNotFoundError(
+                f"Banco não encontrado em {self.db_path}. Rode `python -m etl.pipeline` primeiro.")
 
     @contextmanager
     def conexao_leitura(self) -> Iterator[sqlite3.Connection]:
         """Conexão somente leitura com o banco gerado pelo ETL, fechada ao final."""
-        if not self.db_path.exists():
-            raise FileNotFoundError(
-                f"Banco não encontrado em {self.db_path}. Rode `python -m etl.pipeline` primeiro.")
+        self.exigir_banco()
         conn = sqlite3.connect(f"file:{self.db_path}?mode=ro", uri=True)
         conn.row_factory = sqlite3.Row
         try:
